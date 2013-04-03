@@ -8,6 +8,8 @@ import System.Environment
 import System.Console.GetOpt
 import Control.Monad
 
+import MiniLAX.Parsing.Lexer as L
+
 import qualified Data.ByteString.Lazy as BS
 
 -- | Version of a program
@@ -22,7 +24,9 @@ main = do
         putStrLn "Verbose mode ON"
         putStrLn "Input files: "
         forM_ args $ putStrLn . ('\t' :)
-        
+    content <- optInput opts
+    let tokens = alexScanTokens content    
+    print tokens    
         
 -- | Single record to contain all the program options          
 data Options = Options {

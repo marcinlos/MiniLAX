@@ -9,6 +9,10 @@ executable mlax
   main-is:         Main.hs
   build-depends:   
                    base >= 4,
-                   bytestring
+                   bytestring,
+                   array
   ghc-options:     -Wall
+  other-modules:   
+                   MiniLAX.Parsing.Lexer,
+                   MiniLAX.Parsing.Printer
 
