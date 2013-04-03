@@ -1,14 +1,14 @@
-name:           MiniLAX
+name:           mlax
 version:        0.1
 cabal-version:  >=1.2
 build-type:     Simple
 author:         los
 
-executable MiniLAX
+executable mlax
   hs-source-dirs:  src
   main-is:         Main.hs
   build-depends:   
                    base >= 4,
-                   cmdargs
+                   bytestring
   ghc-options:     -Wall
 

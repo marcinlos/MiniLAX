@@ -7,10 +7,10 @@
   (major1) == 4 && (major2) <  5 || \
   (major1) == 4 && (major2) == 5 && (minor) <= 1)
 
-/* package cmdargs-0.10.1 */
-#define VERSION_cmdargs "0.10.1"
-#define MIN_VERSION_cmdargs(major1,major2,minor) (\
+/* package bytestring-0.9.2.1 */
+#define VERSION_bytestring "0.9.2.1"
+#define MIN_VERSION_bytestring(major1,major2,minor) (\
   (major1) <  0 || \
-  (major1) == 0 && (major2) <  10 || \
-  (major1) == 0 && (major2) == 10 && (minor) <= 1)
+  (major1) == 0 && (major2) <  9 || \
+  (major1) == 0 && (major2) == 9 && (minor) <= 2)
 
