@@ -21,7 +21,7 @@ $digit  = 0-9
 tokens :-
 
   $white+                          ;
-  "(*"(. | '\n')*"*)"              ;
+  "(*" (. | \n)* "*)"              ;
   @int_const                       { \p s -> Int p (read s) }
   @real_const                      { \p s -> Float p (readFloat s) }
   [\:\;\=\+\-\*\/\(\)\.\,\[\]\<]   { \p s -> Sym p s }
