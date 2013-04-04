@@ -1,6 +1,6 @@
 module Main (
-    main 
-  , Options(..) 
+    main, 
+    Options(..) 
 ) where
 
 import System.Exit
@@ -8,13 +8,14 @@ import System.Environment
 import System.Console.GetOpt
 import Control.Monad
 
-import MiniLAX.Parsing.Lexer as L
+import MiniLAX.Parsing.Lexer
+import MiniLAX.Parsing.Printer
 
 import qualified Data.ByteString.Lazy as BS
 
 -- | Version of a program
 version :: String
-version = "1.0"
+version = "0.01"
 
 
 main :: IO ()
@@ -25,22 +26,27 @@ main = do
         putStrLn "Input files: "
         forM_ args $ putStrLn . ('\t' :)
     content <- optInput opts
-    let tokens = alexScanTokens content    
-    print tokens    
+    let tokens = alexScanTokens content
+    when (optTokenize opts) $
+        putStr (showTokens tokens)
+    print tokens
+        
         
 -- | Single record to contain all the program options          
-data Options = Options {
-    optInput   :: IO String,
-    optOutput  :: BS.ByteString -> IO (),
-    optVerbose :: Bool
+data Options = Options { 
+    optInput    :: IO String,
+    optOutput   :: BS.ByteString -> IO (),
+    optVerbose  :: Bool,
+    optTokenize :: Bool
 }
 
 -- | Default value of the options
 defaultOptions :: Options
 defaultOptions = Options {
-    optVerbose = False,
-    optInput   = getContents,
-    optOutput  = BS.putStr
+    optVerbose  = False,
+    optInput    = getContents,
+    optOutput   = BS.putStr,
+    optTokenize = False
 }
         
 
@@ -64,6 +70,10 @@ options = [
             (\file opts -> return opts { optOutput = BS.writeFile file })
             "FILE")
         "Output file",
+        
+    Option [] ["tokenize"]
+        (NoArg $ \opts -> return opts)
+        "Tokenize the input and terminate",
 
     Option "v" ["verbose"]
         (NoArg $ \opts -> return opts { optVerbose = True })

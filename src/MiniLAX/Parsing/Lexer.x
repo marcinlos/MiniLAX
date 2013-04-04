@@ -1,11 +1,14 @@
 {
 module MiniLAX.Parsing.Lexer (
     Token (..), 
-    alexScanTokens
+    alexScanTokens,
+    AlexPosn (AlexPn),
+    tokenPos,
+    showPos
 ) where
 }
 
-%wrapper "basic"
+%wrapper "posn"
 
 $letter = [a-zA-Z] 
 $digit  = 0-9
@@ -18,12 +21,12 @@ $digit  = 0-9
 tokens :-
 
   $white+                          ;
-  "(*".*"*)"                       ;
-  @int_const                       { \s -> Int (read s) }
-  @real_const                      { \s -> Float (readFloat s) }
-  [\:\;\=\+\-\*\/\(\)\.\,\[\]\<]   { \s -> Sym s }
-  ":="                             { \s -> Sym s }
-  ".."                             { \s -> Sym s }
+  "(*"(. | '\n')*"*)"              ;
+  @int_const                       { \p s -> Int p (read s) }
+  @real_const                      { \p s -> Float p (readFloat s) }
+  [\:\;\=\+\-\*\/\(\)\.\,\[\]\<]   { \p s -> Sym p s }
+  ":="                             { \p s -> Sym p s }
+  ".."                             { \p s -> Sym p s }
   
   "ARRAY" | "BEGIN" | "BOOLEAN" | "DECLARE" | "DO" | "ELSE" | "END" |
   "FALSE" | "IF" | "INTEGER" | "NOT"| "OF" | "PROCEDURE" | "PROGRAM" |
@@ -34,15 +37,38 @@ tokens :-
 
 {
 
+-- | Token structure
 data Token =
-    Sym String
-  | Id String
-  | Int Int 
-  | Float Float
-  | Keyword String
-  | Err 
-  deriving (Eq,Show)
+    Sym AlexPosn String
+  | Id AlexPosn String
+  | Int AlexPosn Int 
+  | Float AlexPosn Float
+  | Keyword AlexPosn String
+  | Err AlexPosn 
+  deriving (Eq)
+  
+  
+showPos :: AlexPosn -> String
+showPos (AlexPn _ line col) = "(" ++ (show line) ++ ", " ++ (show col) ++ ")"
 
+instance Show Token where 
+    show (Sym _ s)      = "'" ++ s ++ "'"
+    show (Id _ s)       = "id " ++ s
+    show (Int _ n)      = "int " ++ show n
+    show (Float _ v)    = "float " ++ show v
+    show (Keyword _ w)  = w
+    
+-- | Function retrieving token position
+tokenPos :: Token -> AlexPosn
+tokenPos (Sym p _)      = p
+tokenPos (Id p _)       = p
+tokenPos (Int p _)      = p
+tokenPos (Float p _)    = p
+tokenPos (Keyword p _)  = p
+
+-- | Helper function to parse floating point numbers. The problem with standard
+--   read  function is that it cannot handle numbers with missing 0 before 
+--   the dot
 readFloat :: String -> Float
 readFloat s @ ('.' : _) = read ('0' : s)
 readFloat s = read s
