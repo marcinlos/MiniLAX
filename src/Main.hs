@@ -9,6 +9,7 @@ import System.Console.GetOpt
 import Control.Monad
 
 import MiniLAX.Parsing.Lexer
+import MiniLAX.Parsing.Parser
 import MiniLAX.Parsing.Printer
 
 import qualified Data.ByteString.Lazy as BS
@@ -30,6 +31,7 @@ main = do
     when (optTokenize opts) $
         putStr (showTokens tokens)
     print tokens
+    print $ parse tokens
         
         
 -- | Single record to contain all the program options          

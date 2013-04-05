@@ -14,7 +14,8 @@ executable mlax
   ghc-options:     -Wall
   other-modules:   
                    MiniLAX.Parsing.Lexer,
-                   MiniLAX.Parsing.Printer
+                   MiniLAX.Parsing.Printer,
+                   MiniLAX.Parsing.Parser
 
 test-suite Test
   type:            exitcode-stdio-1.0
@@ -23,7 +24,8 @@ test-suite Test
   build-depends:   base >= 4, HTF > 0.9
   other-modules:   
                   MiniLAX.Parsing.Lexer,
-                  MiniLAX.Parsing.LexerTest
+                  MiniLAX.Parsing.LexerTest,
+                  MiniLAX.Parsing.Parser
   hs-source-dirs:  
                   tests,
                   src

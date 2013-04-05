@@ -24,16 +24,16 @@ tokens :-
   "(*" (. | \n)* "*)"              ;
   @int_const                       { \p s -> Int p (read s) }
   @real_const                      { \p s -> Float p (readFloat s) }
-  [\:\;\=\+\-\*\/\(\)\.\,\[\]\<]   { \p s -> Sym p s }
-  ":="                             { \p s -> Sym p s }
-  ".."                             { \p s -> Sym p s }
+  [\:\;\=\+\-\*\/\(\)\.\,\[\]\<]   { Sym }
+  ":="                             { Sym }
+  ".."                             { Sym }
   
   "ARRAY" | "BEGIN" | "BOOLEAN" | "DECLARE" | "DO" | "ELSE" | "END" |
   "FALSE" | "IF" | "INTEGER" | "NOT"| "OF" | "PROCEDURE" | "PROGRAM" |
   "READ" | "REAL" | "THEN" | "TRUE" | "VAR" | "WHILE" | "WRITE"
-                                   { \s -> Keyword s }
+                                   { Keyword }
   
-  @id                              { \s -> Id s }
+  @id                              { Id }
 
 {
 
@@ -46,7 +46,7 @@ data Token =
   | Keyword AlexPosn String
   | Err AlexPosn 
   deriving (Eq)
-  
+
   
 -- | Converts AlexPosn into a string "(line, col)"
 showPos :: AlexPosn -> String
