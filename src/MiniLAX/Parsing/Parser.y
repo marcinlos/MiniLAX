@@ -2,6 +2,7 @@
 module MiniLAX.Parsing.Parser where
 
 import MiniLAX.Parsing.Lexer
+import qualified MiniLAX.AST as AST
 }
 
 %name parse
@@ -55,55 +56,55 @@ import MiniLAX.Parsing.Lexer
   
 %%
 
-Program :: { String }
+Program :: { AST.Program }
   : "PROGRAM" Id ';' Block '.'              { undefined }
   
-ProcDecl :: { String }
+ProcDecl :: { AST.Decl }
   : ProcHead ';' Block                      { undefined }
   
-Block :: { String }
+Block :: { AST.Block }
   : "DECLARE" DeclSeq "BEGIN" StatSeq "END" { undefined }
   
-DeclSeq :: { String }
+DeclSeq :: { AST.DeclSeq }
   : Decl                                    { undefined }
   | DeclSeq ';' Decl                        { undefined }
   
-Decl :: { String }
+Decl :: { AST.Decl }
   : VarDecl                                 { undefined }
   | ProcDecl                                { undefined }
   
-ProcHead :: { String }
+ProcHead :: { (String, AST.FormalSeq) }
   : "PROCEDURE" Id                          { undefined }
   | "PROCEDURE" Id '(' FormalSeq ')'        { undefined }
   
-FormalSeq :: { String }
+FormalSeq :: { AST.FormalSeq }
   : Formal                                  { undefined }
   | FormalSeq ';' Formal                    { undefined }
   
-Formal :: { String }
+Formal :: { AST.Formal }
   : "VAR" Id ':' Type                       { undefined }
   | Id ':' Type                             { undefined }
   
-Type :: { String }
+Type :: { AST.Type }
   : SimpleType                              { undefined }
   | ArrayType                               { undefined }
  
-SimpleType :: { String }
+SimpleType :: { AST.Type }
   : "INTEGER"                               { undefined }
   | "REAL"                                  { undefined }
   | "BOOLEAN"                               { undefined }
   
-ArrayType :: { String }
+ArrayType :: { AST.Type }
   : "ARRAY" '[' IntConst ".." IntConst ']' "OF" Type    { undefined }
   
-VarDecl :: { String }
+VarDecl :: { AST.Decl }
   : Id ':' Type                             { undefined }
   
-Var :: { String }
+Var :: { AST.Var }
   : Id                                      { undefined }
   | Var '[' Expr ']'                        { undefined }
   
-Expr :: { String }
+Expr :: { AST.Expr }
   : Expr '+' Expr                           { undefined }
   | Expr '*' Expr                           { undefined }
   | Expr '<' Expr                           { undefined }
@@ -115,24 +116,24 @@ Expr :: { String }
   | "TRUE"                                  { undefined }
   | "FALSE"                                 { undefined }
   
-StatSeq :: { String }
+StatSeq :: { AST.StatSeq }
   : Stat                                    { undefined }
   | StatSeq ';' Stat                        { undefined }
   
-Stat :: { String }
+Stat :: { AST.Stat }
   : AssignStat                              { undefined }
   | ProcStat                                { undefined }
   | CondStat                                { undefined }
   | LoopStat                                { undefined }
   
-AssignStat :: { String }
+AssignStat :: { AST.Stat }
   : Var ":=" Expr                           { undefined }
   
-ProcStat :: { String }
+ProcStat :: { AST.Stat }
   : Id                                      { undefined }
   | Id '(' ExprSeq ')'                      { undefined }
   
-ExprSeq :: { String }
+ExprSeq :: { AST.ExprSeq }
   : Expr                                    { undefined }
   | ExprSeq ',' Expr                        { undefined }
   
@@ -152,7 +153,7 @@ type ParseMonad = Either ParseError
  
 parseError :: [Token] -> a
 parseError tokens = 
-    error $ "Parse error at " ++ (showPos pos) ++ "[" ++ token ++ "]"
+    error $ "Parse error at " ++ (showPos pos) ++ " [at " ++ token ++ "]"
     where (token, pos) = case tokens of
               t : _ -> ("(" ++ (show t) ++ ")", tokenPos t)
               _     -> ("", AlexPn 0 0 0) 
