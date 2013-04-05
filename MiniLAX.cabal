@@ -15,7 +15,9 @@ executable mlax
   other-modules:   
                    MiniLAX.Parsing.Lexer,
                    MiniLAX.Parsing.Printer,
-                   MiniLAX.Parsing.Parser
+                   MiniLAX.Parsing.Parser,
+                   MiniLAX.AST,
+                   MiniLAX.Location
 
 test-suite Test
   type:            exitcode-stdio-1.0
@@ -25,7 +27,9 @@ test-suite Test
   other-modules:   
                   MiniLAX.Parsing.Lexer,
                   MiniLAX.Parsing.LexerTest,
-                  MiniLAX.Parsing.Parser
+                  MiniLAX.Parsing.Parser,
+                  MiniLAX.AST,
+                  MiniLAX.Location
   hs-source-dirs:  
                   tests,
                   src

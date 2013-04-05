@@ -3,11 +3,12 @@ module MiniLAX.Parsing.Printer (
 ) where
 
 import MiniLAX.Parsing.Lexer
+import MiniLAX.Location
 
 import Data.List
 
 showTokens :: [Token] -> String
 showTokens = 
     intercalate "\n" . map showOne
-    where showOne tok = showPos (tokenPos tok) ++ ": " ++ show tok 
+    where showOne tok = show (getLocation tok) ++ ": " ++ show tok 
 

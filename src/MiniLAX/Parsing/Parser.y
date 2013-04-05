@@ -47,13 +47,11 @@ import MiniLAX.Parsing.Lexer
   "OF"              { Keyword _ "OF" }
   "PROCEDURE"       { Keyword _ "PROCEDURE" }
   "PROGRAM"         { Keyword _ "PROGRAM" }
-  --"READ"            { Keyword _ "READ" }
   "REAL"            { Keyword _ "REAL" }
   "THEN"            { Keyword _ "THEN" }
   "TRUE"            { Keyword _ "TRUE" }
   "VAR"             { Keyword _ "VAR" }
   "WHILE"           { Keyword _ "WHILE" }
-  --"WRITE"           { Keyword _ "WRITE" }
   
 %%
 

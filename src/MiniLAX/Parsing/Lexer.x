@@ -6,6 +6,9 @@ module MiniLAX.Parsing.Lexer (
     tokenPos,
     showPos
 ) where
+
+import MiniLAX.Location (SourceElement (..), Location (..))
+
 }
 
 %wrapper "posn"
@@ -30,8 +33,7 @@ tokens :-
   
   "ARRAY" | "BEGIN" | "BOOLEAN" | "DECLARE" | "DO" | "ELSE" | "END" |
   "FALSE" | "IF" | "INTEGER" | "NOT"| "OF" | "PROCEDURE" | "PROGRAM" |
-  "READ" | "REAL" | "THEN" | "TRUE" | "VAR" | "WHILE" | "WRITE"
-                                   { Keyword }
+  "REAL" | "THEN" | "TRUE" | "VAR" | "WHILE" { Keyword }
   
   @id                              { Id }
 
@@ -50,7 +52,7 @@ data Token =
   
 -- | Converts AlexPosn into a string "(line, col)"
 showPos :: AlexPosn -> String
-showPos (AlexPn _ line col) = "(" ++ (show line) ++ ", " ++ (show col) ++ ")"
+showPos (AlexPn _ line col) = show (line, col)
 
 instance Show Token where 
     show (Sym _ s)      = "'" ++ s ++ "'"
@@ -68,6 +70,13 @@ tokenPos (Int p _)      = p
 tokenPos (Float p _)    = p
 tokenPos (Keyword p _)  = p
 tokenPos (Err p)        = p
+
+-- | Converts AlexPosn to Location 
+alexToLocation :: AlexPosn -> Location
+alexToLocation (AlexPn _ line col) = Location undefined line col
+
+instance SourceElement Token where
+    getLocation = alexToLocation . tokenPos
 
 -- | Helper function to parse floating point numbers. The problem with standard
 --   read  function is that it cannot handle numbers with missing 0 before 
