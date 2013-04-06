@@ -3,20 +3,16 @@ module Main (
     Options(..) 
 ) where
 
-import System.Exit
-import System.Environment
-import System.Console.GetOpt
+-- |
 import Control.Monad
+
+import System.Environment
+import MiniLAX.Options
 
 import MiniLAX.Parsing.Lexer
 import MiniLAX.Parsing.Parser
 import MiniLAX.Parsing.Printer
 
-import qualified Data.ByteString.Lazy as BS
-
--- | Version of a program
-version :: String
-version = "0.01"
 
 
 main :: IO ()
@@ -28,72 +24,9 @@ main = do
         forM_ args $ putStrLn . ('\t' :)
     content <- optInput opts
     let tokens = alexScanTokens content
-    when (optTokenize opts) $
-        putStr (showTokens tokens)
-    print tokens
-    print $ parse tokens
-        
-        
--- | Single record to contain all the program options          
-data Options = Options { 
-    optInput    :: IO String,
-    optOutput   :: BS.ByteString -> IO (),
-    optVerbose  :: Bool,
-    optTokenize :: Bool
-}
-
--- | Default value of the options
-defaultOptions :: Options
-defaultOptions = Options {
-    optVerbose  = False,
-    optInput    = getContents,
-    optOutput   = BS.putStr,
-    optTokenize = False
-}
+    when (optTokenize opts) $ do
+        putStrLn (showTokens tokens)
+    --print $ parse tokens
         
 
--- | Function building options structure and undertaking necessary actions
---   based on command line arguments. Actions are defined by 'options' list.
-parseOptions :: [String] -> IO (Options, [String])
-parseOptions args = do
-    let (actions, nonOpts, errs) = getOpt Permute options args
-    case errs of 
-        [] -> do opts <- foldl (>>=) (return defaultOptions) actions
-                 return (opts, nonOpts)
-        _  -> ioError $ userError (concat errs ++ usageInfo header options)
-    where header = "Usage: mlax [OPTION...] file"
-     
-     
--- | Actions corresponding to all the available options
-options :: [OptDescr (Options -> IO Options)]
-options = [
-    Option "o" ["output"]
-        (ReqArg
-            (\file opts -> return opts { optOutput = BS.writeFile file })
-            "FILE")
-        "Output file",
-        
-    Option [] ["tokenize"]
-        (NoArg $ \opts -> return opts)
-        "Tokenize the input and terminate",
-
-    Option "v" ["verbose"]
-        (NoArg $ \opts -> return opts { optVerbose = True })
-        "Enables additional output for debugging purposes",
-        
-    Option "V" ["version"]
-        (NoArg $ \_ -> do
-            putStrLn versionString
-            exitSuccess)
-        "Prints version information and terminates",
-        
-    Option "h" ["help"]
-        (NoArg $ \_ -> do
-            putStrLn $ usageInfo "mlax" options
-            exitSuccess)
-        "Prints usage info and terminates"
-    ]
-    
-versionString :: String
-versionString = "MiniLAX compiler, version " ++ version
     

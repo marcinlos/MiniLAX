@@ -1,3 +1,4 @@
+-- | Module exporting AST definitions
 module MiniLAX.AST (
     Program (..),
     Block (..),
@@ -18,15 +19,16 @@ module MiniLAX.AST (
     UnOp (..),
 ) where
 
--- |
--- import MiniLAX.Location
 
+-- | Enumeration of binary operators
 data BinOp = Plus | Times | Less
     deriving (Eq, Show)
 
+-- | Enumeration of unary operators
 data UnOp = Not
     deriving (Eq, Show)
-    
+
+-- | Represents var/val nature of procedure parameters    
 data ParamType = VarParam | ValParam
     deriving (Eq, Show)
 
