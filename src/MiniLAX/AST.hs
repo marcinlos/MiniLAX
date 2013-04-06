@@ -3,6 +3,7 @@ module MiniLAX.AST (
     Block (..),
     Decl (..),
     DeclSeq,
+    ProcHead (..),
     ParamType (..),
     Formal (..),
     FormalSeq,
@@ -11,13 +12,14 @@ module MiniLAX.AST (
     StatSeq,
     Expr (..),
     ExprSeq,
+    BoolLiteral (..),
     Var (..),
     BinOp (..),
     UnOp (..),
 ) where
 
 -- |
-import MiniLAX.Location
+-- import MiniLAX.Location
 
 data BinOp = Plus | Times | Less
     deriving (Eq, Show)
@@ -54,11 +56,15 @@ data Decl =
         varType :: Type
     }
   | ProcDecl {
-        procName   :: String,
-        procParams :: FormalSeq,
-        procBody   :: Block
+        procHead :: ProcHead,
+        procBody :: Block
     } 
   deriving (Eq, Show)
+  
+data ProcHead = ProcHead {
+    procName   :: String,
+    procParams :: FormalSeq
+} deriving (Eq, Show)
 
 type ExprSeq = [Expr]
 
@@ -74,11 +80,12 @@ data Expr =
     }
   | IntConst Int
   | RealConst Float
-  | Id String
   | VarExpr Var
-  | TrueL
-  | FalseL
+  | BoolConst BoolLiteral
   deriving (Eq, Show)
+  
+data BoolLiteral = TrueL | FalseL
+    deriving (Eq, Show)
   
 data Var = VarId String 
   | VarIndex {

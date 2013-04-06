@@ -2,7 +2,7 @@
 module MiniLAX.Parsing.Parser where
 
 import MiniLAX.Parsing.Lexer
-import qualified MiniLAX.AST as AST
+import MiniLAX.AST as AST
 }
 
 %name parse
@@ -35,7 +35,7 @@ import qualified MiniLAX.AST as AST
   ".."              { Sym _ ".." }
   
   "ARRAY"           { Keyword _ "ARRAY" }
-  "BEGIN"           { Keyword _ "PROGRAM" }
+  "BEGIN"           { Keyword _ "BEGIN" }
   "BOOLEAN"         { Keyword _ "BOOLEAN" }
   "DECLARE"         { Keyword _ "DECLARE" }
   "DO"              { Keyword _ "DO" }
@@ -56,92 +56,95 @@ import qualified MiniLAX.AST as AST
   
 %%
 
-Program :: { AST.Program }
-  : "PROGRAM" Id ';' Block '.'              { undefined }
+Program :: { Program }
+  : "PROGRAM" Id ';' Block '.'              { Program $2 $4 }
   
-ProcDecl :: { AST.Decl }
-  : ProcHead ';' Block                      { undefined }
+ProcDecl :: { Decl }
+  : ProcHead ';' Block                      { ProcDecl $1 $3 }
   
-Block :: { AST.Block }
-  : "DECLARE" DeclSeq "BEGIN" StatSeq "END" { undefined }
+Block :: { Block }
+  : "DECLARE" DeclSeq 
+    "BEGIN" StatSeq "END"                   { Block $2 $4 }
   
-DeclSeq :: { AST.DeclSeq }
-  : Decl                                    { undefined }
-  | DeclSeq ';' Decl                        { undefined }
+DeclSeq :: { DeclSeq }
+  : Decl                                    { [$1] }
+  | DeclSeq ';' Decl                        { $3 : $1 }
   
-Decl :: { AST.Decl }
-  : VarDecl                                 { undefined }
-  | ProcDecl                                { undefined }
+Decl :: { Decl }
+  : VarDecl                                 { $1 }
+  | ProcDecl                                { $1 }
   
-ProcHead :: { (String, AST.FormalSeq) }
-  : "PROCEDURE" Id                          { undefined }
-  | "PROCEDURE" Id '(' FormalSeq ')'        { undefined }
+ProcHead :: { ProcHead }
+  : "PROCEDURE" Id                          { ProcHead $2 [] }
+  | "PROCEDURE" Id '(' FormalSeq ')'        { ProcHead $2 $4 }
   
-FormalSeq :: { AST.FormalSeq }
-  : Formal                                  { undefined }
-  | FormalSeq ';' Formal                    { undefined }
+FormalSeq :: { FormalSeq }
+  : Formal                                  { [$1] }
+  | FormalSeq ';' Formal                    { $3 : $1 }
   
-Formal :: { AST.Formal }
-  : "VAR" Id ':' Type                       { undefined }
-  | Id ':' Type                             { undefined }
+Formal :: { Formal }
+  : "VAR" Id ':' Type                       { Formal $2 $4 VarParam }
+  | Id ':' Type                             { Formal $1 $3 ValParam }
   
-Type :: { AST.Type }
-  : SimpleType                              { undefined }
-  | ArrayType                               { undefined }
+Type :: { Type }
+  : SimpleType                              { $1 }
+  | ArrayType                               { $1 }
  
-SimpleType :: { AST.Type }
-  : "INTEGER"                               { undefined }
-  | "REAL"                                  { undefined }
-  | "BOOLEAN"                               { undefined }
+SimpleType :: { Type }
+  : "INTEGER"                               { IntegerT }
+  | "REAL"                                  { RealT }
+  | "BOOLEAN"                               { BooleanT }
   
-ArrayType :: { AST.Type }
-  : "ARRAY" '[' IntConst ".." IntConst ']' "OF" Type    { undefined }
+ArrayType :: { Type }
+  : "ARRAY" '[' IntConst ".." IntConst ']' 
+    "OF" Type                               { ArrayT $8 $3 $5 }
   
-VarDecl :: { AST.Decl }
-  : Id ':' Type                             { undefined }
+VarDecl :: { Decl }
+  : Id ':' Type                             { VarDecl $1 $3 }
   
-Var :: { AST.Var }
-  : Id                                      { undefined }
-  | Var '[' Expr ']'                        { undefined }
+Var :: { Var }
+  : Id                                      { VarId $1 }
+  | Var '[' Expr ']'                        { VarIndex $1 $3 }
   
-Expr :: { AST.Expr }
-  : Expr '+' Expr                           { undefined }
-  | Expr '*' Expr                           { undefined }
-  | Expr '<' Expr                           { undefined }
-  | "NOT" Expr %prec NOT_P                  { undefined }
-  | '(' Expr ')'                            { undefined }
-  | Var                                     { undefined }
-  | IntConst                                { undefined }
-  | RealConst                               { undefined }
-  | "TRUE"                                  { undefined }
-  | "FALSE"                                 { undefined }
+Expr :: { Expr }
+  : Expr '+' Expr                           { BinaryExpr Plus $1 $3 }
+  | Expr '*' Expr                           { BinaryExpr Times $1 $3 }
+  | Expr '<' Expr                           { BinaryExpr Less $1 $3 }
+  | "NOT" Expr %prec NOT_P                  { UnaryExpr Not $2 }
+  | '(' Expr ')'                            { $2 }
+  | Var                                     { VarExpr $1 }
+  | IntConst                                { IntConst $1 }
+  | RealConst                               { RealConst $1 }
+  | "TRUE"                                  { BoolConst TrueL }
+  | "FALSE"                                 { BoolConst FalseL }
   
-StatSeq :: { AST.StatSeq }
-  : Stat                                    { undefined }
-  | StatSeq ';' Stat                        { undefined }
+StatSeq :: { StatSeq }
+  : Stat                                    { [$1] }
+  | StatSeq ';' Stat                        { $3 : $1 }
   
-Stat :: { AST.Stat }
-  : AssignStat                              { undefined }
-  | ProcStat                                { undefined }
-  | CondStat                                { undefined }
-  | LoopStat                                { undefined }
+Stat :: { Stat }
+  : AssignStat                              { $1 }
+  | ProcStat                                { $1 }
+  | CondStat                                { $1 }
+  | LoopStat                                { $1 }
   
-AssignStat :: { AST.Stat }
-  : Var ":=" Expr                           { undefined }
+AssignStat :: { Stat }
+  : Var ":=" Expr                           { AssignStat $1 $3 }
   
-ProcStat :: { AST.Stat }
-  : Id                                      { undefined }
-  | Id '(' ExprSeq ')'                      { undefined }
+ProcStat :: { Stat }
+  : Id                                      { ProcStat $1 [] }
+  | Id '(' ExprSeq ')'                      { ProcStat $1 $3 }
   
-ExprSeq :: { AST.ExprSeq }
-  : Expr                                    { undefined }
-  | ExprSeq ',' Expr                        { undefined }
+ExprSeq :: { ExprSeq }
+  : Expr                                    { [$1] }
+  | ExprSeq ',' Expr                        { $3 : $1 }
   
-CondStat :: { String }
-  : "IF" Expr "THEN" StatSeq "ELSE" StatSeq "END" { undefined }
+CondStat :: { Stat }
+  : "IF" Expr "THEN" StatSeq 
+    "ELSE" StatSeq "END"                    { CondStat $2 $4 $6 }
   
-LoopStat :: { String }
-  : "WHILE" Expr "DO" StatSeq "END"         { undefined }
+LoopStat :: { Stat }
+  : "WHILE" Expr "DO" StatSeq "END"         { LoopStat $2 $4 }
   
 
 {
@@ -155,7 +158,7 @@ parseError :: [Token] -> a
 parseError tokens = 
     error $ "Parse error at " ++ (showPos pos) ++ " [at " ++ token ++ "]"
     where (token, pos) = case tokens of
-              t : _ -> ("(" ++ (show t) ++ ")", tokenPos t)
+              t : _ -> (show t, tokenPos t)
               _     -> ("", AlexPn 0 0 0) 
 
 }

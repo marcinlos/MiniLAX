@@ -59,7 +59,7 @@ instance Show Token where
     show (Id _ s)       = "id " ++ s
     show (Int _ n)      = "int " ++ show n
     show (Float _ v)    = "float " ++ show v
-    show (Keyword _ w)  = w
+    show (Keyword _ w)  = "'" ++ w ++ "'"
     show (Err _)        = "<error>"
     
 -- | Function retrieving token position
