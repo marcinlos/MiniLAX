@@ -15,21 +15,25 @@ version = "0.01"
         
 -- | Single record to contain all the program options          
 data Options = Options { 
-    optInput    :: IO String,
-    optOutput   :: BS.ByteString -> IO (),
-    optVerbose  :: Bool,
-    optTokenize :: Bool
+    optInputName   :: String,
+    optInput       :: IO String,
+    optOutput      :: BS.ByteString -> IO (),
+    optVerbose     :: Bool,
+    optDumpTokens  :: Bool,
+    optDumpAst     :: Bool
 }
 
 -- | Default value of the options
 defaultOptions :: Options
 defaultOptions = Options {
-    optVerbose  = False,
-    optInput    = getContents,
-    optOutput   = BS.putStr,
-    optTokenize = False
+    optVerbose     = False,
+    optInputName   = "-",
+    optInput       = getContents,
+    optOutput      = BS.putStr,
+    optDumpTokens  = False,
+    optDumpAst     = False
 }
-        
+
 
 -- | Function building options structure and undertaking necessary actions
 --   based on command line arguments. Actions are defined by 'options' list.
@@ -56,9 +60,15 @@ parseNonopts args opts =
             hPutStrLn stderr $ "Warning: More than one input file, " ++ 
                 "only " ++ path ++ " shall be processed"
             changeInput path rest
-    where changeInput path rest = do
-              handle <- openFile path ReadMode
-              return (opts { optInput = hGetContents handle}, rest)        
+  where 
+    changeInput path rest = do
+        let input = if path /= "-" 
+                then openFile path ReadMode >>= hGetContents
+                else getContents
+        return (opts {
+            optInput = input, 
+            optInputName = path 
+        }, rest)
      
      
 -- | Actions corresponding to all the available options
@@ -70,9 +80,14 @@ options = [
             "FILE")
         "Output file",
         
-    Option [] ["print-tokens"]
-        (NoArg $ \opts -> return opts { optTokenize = True })
+    Option [] ["dump-tokens"]
+        (NoArg $ \opts -> return opts { optDumpTokens = True })
         "Prints tokens of the input and terminates",
+        
+    Option [] ["dump-ast"]
+        (NoArg $ \opts -> return opts { optDumpAst = True })
+        "Prints original form of AST of the input and terminates",
+        
 
     Option "v" ["verbose"]
         (NoArg $ \opts -> return opts { optVerbose = True })

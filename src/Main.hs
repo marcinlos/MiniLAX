@@ -13,6 +13,8 @@ import MiniLAX.Parsing.Lexer
 import MiniLAX.Parsing.Parser
 import MiniLAX.Parsing.Printer
 
+import MiniLAX.AST.Printer
+
 
 
 main :: IO ()
@@ -20,13 +22,16 @@ main = do
     (opts, args) <- parseOptions =<< getArgs
     when (optVerbose opts) $ do
         putStrLn "Verbose mode ON"
-        putStrLn "Input files: "
+        putStrLn "Input file(s): "
         forM_ args $ putStrLn . ('\t' :)
     content <- optInput opts
     let tokens = alexScanTokens content
-    when (optTokenize opts) $ do
+    when (optDumpTokens opts) $ do
         putStrLn (showTokens tokens)
-    --print $ parse tokens
+    case parse tokens of
+        Right ast -> 
+            when (optDumpAst opts) $ do
+                putStrLn . getString . prettyPrint $ ast
+        Left err ->
+            putStrLn err
         
-
-    
