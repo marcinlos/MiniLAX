@@ -64,8 +64,8 @@ instance Printable Program where
         
 instance Printable Block where
     prettyPrint (Block decls stats) = do
-        put "Decls " >> bracketed (mapM_ prettyPrint decls)
-        put "Stats " >> bracketed (mapM_ prettyPrint stats)
+        put "Decls " >> bracketed (mapM_ prettyPrint $ reverse decls)
+        put "Stats " >> bracketed (mapM_ prettyPrint $ reverse stats)
         
 instance Printable Decl where
     prettyPrint (VarDecl name type_) = do
@@ -102,7 +102,7 @@ instance Printable ParamType where
 instance Printable ProcHead where
     prettyPrint (ProcHead name params) = do
         put "Name '" %% name %% "'" >> endl
-        put "Params " >> bracketed (mapM_ prettyPrint params)
+        put "Params " >> bracketed (mapM_ prettyPrint $ reverse params)
         
 instance Printable Formal where
     prettyPrint (Formal name type_ kind) = do
@@ -120,17 +120,18 @@ instance Printable Stat where
     prettyPrint (ProcStat name args) = do
         put "Call "; bracketed $ do
             put "Name: '" %% name %% "'" >> endl
-            put "Args " >> bracketed (mapM_ prettyPrint args)
+            put "Args " >> bracketed (mapM_ prettyPrint $ reverse args)
         
     prettyPrint (CondStat cond true false) = do
         put "If "; bracketed $ do
-            put "True "  >> bracketed (mapM_ prettyPrint true)
-            put "False " >> bracketed (mapM_ prettyPrint false)
+            put "Cond " >> bracketed (prettyPrint cond)
+            put "True "  >> bracketed (mapM_ prettyPrint $ reverse true)
+            put "False " >> bracketed (mapM_ prettyPrint $ reverse false)
             
     prettyPrint (LoopStat cond body) = do
         put "While "; bracketed $ do
             put "Cond " >> bracketed (prettyPrint cond)
-            put "Body " >> bracketed (mapM_ prettyPrint body)
+            put "Body " >> bracketed (mapM_ prettyPrint $ reverse body)
         
 instance Printable Var where
     prettyPrint (VarId name) = 
@@ -142,8 +143,29 @@ instance Printable Var where
             put "Index " >> bracketed (prettyPrint index)
         
 instance Printable Expr where
-    prettyPrint = const (put "?" >> endl)
+    prettyPrint (BinaryExpr op left right) = do
+        put "Binary "; bracketed $ do
+            put "Op: " %% show op >> endl
+            put "Left "  >> bracketed (prettyPrint left)
+            put "Right " >> bracketed (prettyPrint right)
+            
+    prettyPrint (UnaryExpr op expr) = do
+        put "Unary "; bracketed $ do
+            put "Op: " %% show op >> endl
+            put "Expr " >> bracketed (prettyPrint expr)
+            
+    prettyPrint (IntConst n) =
+        put "IntConst " %% show n >> endl
         
+    prettyPrint (RealConst x) = 
+        put "RealConst " %% show x >> endl
+        
+    prettyPrint (BoolConst b) =
+        put "BoolConst " %% show b >> endl
+        
+    prettyPrint (VarExpr var) = 
+        put "VarExpr " >> bracketed (prettyPrint var)
+
         
     
 
