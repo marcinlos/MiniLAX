@@ -19,7 +19,8 @@ executable mlax
                    MiniLAX.AST,
                    MiniLAX.Location,
                    MiniLAX.Options,
-                   MiniLAX.AST.Printer
+                   MiniLAX.AST.Printer,
+                   MiniLAX.Printer
 
 test-suite Test
   type:            exitcode-stdio-1.0
@@ -33,7 +34,8 @@ test-suite Test
                   MiniLAX.AST,
                   MiniLAX.Location,
                   MiniLAX.Options,
-                  MiniLAX.AST.Printer
+                  MiniLAX.AST.Printer,
+                  MiniLAX.Printer
   hs-source-dirs:  
                   tests,
                   src

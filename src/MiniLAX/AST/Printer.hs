@@ -1,14 +1,16 @@
 {-# LANGUAGE ExistentialQuantification #-}
-
+    
 -- | Module containing functions used to pretty-print AST
 module MiniLAX.AST.Printer where
-
+    
 -- | To print locations of AST elements
 import MiniLAX.Location
 
+import MiniLAX.Printer
+
 import MiniLAX.AST
 import Control.Applicative
-import Data.Monoid
+import Control.Monad
 
 
 data ASTVal = forall a. (ASTElement a) => ASTVal { unwrap :: a }
@@ -53,110 +55,97 @@ instance ASTElement Block where
     
 instance ASTElement Program where
     children (Program _ body) = [ASTVal body]
-    
-data PrintState = PrintState {
-    getContent :: String -> String,
-    getIndent  :: Int
-}
 
 
-
-instance Monoid PrintState where
-    mempty = PrintState {
-        getContent = id,
-        getIndent = 0
-    }
-    mappend (PrintState c _) (PrintState c' i') =
-        PrintState {
-            getContent = c . c',
-            getIndent = i'
-        }
-
-
-newtype PrinterMonad a = PrinterMonad { 
-    runPrinter :: PrintState -> (a, PrintState) 
-}
-
-getString :: PrinterMonad a -> String
-getString m = getContent s ""
-    where (_, s) = runPrinter m mempty
-
-instance Monad PrinterMonad where
-    return a = PrinterMonad $ \s -> (a, s)
-    m >>= f = PrinterMonad {
-        runPrinter = \s ->
-            let (v, s') = runPrinter m s
-                s'' = s `mappend` s'
-            in runPrinter (f v) s''
-    }
-    
-getIndentLvl :: PrinterMonad Int
-getIndentLvl = PrinterMonad $ \s ->
-    let n = getIndent s 
-    in (n, s)
-
-append :: ShowS -> PrinterMonad ()
-append str = PrinterMonad $ \s @ PrintState { getContent = old } ->
-    let s' = s { getContent =  old . str }
-    in ((), s')
-    
-put :: String -> PrinterMonad ()
-put s = append (s++)
-
-endl :: PrinterMonad ()
---endl = put "\n" >> getIndentLvl >>= put . flip replicate ' ' . (*3)
-endl = do
-    put "\n"
-    n <- getIndentLvl
-    put $ replicate (n * 3) ' '
-
-
-infixl 5 %%
-
-(%%) :: PrinterMonad () -> String -> PrinterMonad ()
-m %% s = m >> put s
-
-indent :: Int -> PrinterMonad ()
-indent k = PrinterMonad $ \s @ PrintState { getIndent = n } ->
-    let s' = s { getIndent = n + k } 
-    in ((), s')
-
-shRight, shLeft :: PrinterMonad ()
-shRight = indent 1
-shLeft  = indent (-1)
-
-indented :: PrinterMonad a -> PrinterMonad ()
-indented s = shRight >> s >> shLeft
-
-class Printable a where
-    prettyPrint :: a -> PrinterMonad ()
-    
-ind :: Int -> ShowS
-ind = (++) . flip replicate ' ' . (*3)
     
 instance Printable Program where
     prettyPrint (Program name body) = do
-        --put "Program '"
-        --put name 
-        --put "' {"
-        --put "1" %% "2" %% "3" %% "4" %% "5" %% "6" %% "7"
-        put "1"
-        put "2"
-        put "3"
-        --put "4"
-        --put "5"
-        --put "6"
-        --put "}" %% "Twoja matka to chuj"
-        {-ind n . ("Program '" ++) . (name ++) . ("' {\n" ++)
-        . prettyPrint (n + 1) body
-        . ind n . ("}\n" ++)-}
-        
+        put "Program '" %% name %% "' " >> bracketed (prettyPrint body)
         
 instance Printable Block where
     prettyPrint (Block decls stats) = do
-        put "Decls {\n"
-        put "}\n"
-        put "Stats {\n"
-        put "}\n"
+        put "Decls " >> bracketed (mapM_ prettyPrint decls)
+        put "Stats " >> bracketed (mapM_ prettyPrint stats)
+        
+instance Printable Decl where
+    prettyPrint (VarDecl name type_) = do
+        put "Var "; bracketed $ do
+            put "Name: '" %% name %% "'" >> endl
+            put "Type " >> bracketed (prettyPrint type_)
     
+    prettyPrint (ProcDecl info body) = do
+        put "Proc "; bracketed $ do
+            prettyPrint info
+            prettyPrint body
+        
+instance Printable Type where
+    prettyPrint (ArrayT el low high) = do
+        put "Array "; bracketed $ do
+            put "Lower bound: " %% show low >> endl
+            put "Upper bound: " %% show high >> endl
+            put "Element type " >> bracketed (prettyPrint el) 
+
+    prettyPrint IntegerT = put "INTEGER" >> endl
+    prettyPrint RealT    = put "REAL" >> endl
+    prettyPrint BooleanT = put "BOOLEAN" >> endl
     
+instance Printable BinOp where
+    prettyPrint = put . show
+    
+instance Printable UnOp where
+    prettyPrint = put . show
+    
+instance Printable ParamType where
+    prettyPrint VarParam = put "Var" >> endl
+    prettyPrint ValParam = put "Val" >> endl
+    
+instance Printable ProcHead where
+    prettyPrint (ProcHead name params) = do
+        put "Name '" %% name %% "'" >> endl
+        put "Params " >> bracketed (mapM_ prettyPrint params)
+        
+instance Printable Formal where
+    prettyPrint (Formal name type_ kind) = do
+        put "Formal "; bracketed $ do
+            put "Name: '" %% name %% "'" >> endl
+            put "Kind: " %% show kind >> endl  
+            put "Type " >> bracketed (prettyPrint type_)
+            
+instance Printable Stat where
+    prettyPrint (AssignStat left right) = do
+        put "Assignment "; bracketed $ do
+            put "Left "  >> bracketed (prettyPrint left)
+            put "Right " >> bracketed (prettyPrint right)
+        
+    prettyPrint (ProcStat name args) = do
+        put "Call "; bracketed $ do
+            put "Name: '" %% name %% "'" >> endl
+            put "Args " >> bracketed (mapM_ prettyPrint args)
+        
+    prettyPrint (CondStat cond true false) = do
+        put "If "; bracketed $ do
+            put "True "  >> bracketed (mapM_ prettyPrint true)
+            put "False " >> bracketed (mapM_ prettyPrint false)
+            
+    prettyPrint (LoopStat cond body) = do
+        put "While "; bracketed $ do
+            put "Cond " >> bracketed (prettyPrint cond)
+            put "Body " >> bracketed (mapM_ prettyPrint body)
+        
+instance Printable Var where
+    prettyPrint (VarId name) = 
+        put "VarName: '" %% name %% "'" >> endl
+        
+    prettyPrint (VarIndex base index) = do
+        put "Variable "; bracketed $ do
+            put "Base "  >> bracketed (prettyPrint base)
+            put "Index " >> bracketed (prettyPrint index)
+        
+instance Printable Expr where
+    prettyPrint = const (put "?" >> endl)
+        
+        
+    
+
+    
+ 

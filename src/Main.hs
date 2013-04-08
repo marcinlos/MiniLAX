@@ -13,6 +13,7 @@ import MiniLAX.Parsing.Lexer
 import MiniLAX.Parsing.Parser
 import MiniLAX.Parsing.Printer
 
+import MiniLAX.Printer
 import MiniLAX.AST.Printer
 
 
@@ -26,11 +27,12 @@ main = do
         forM_ args $ putStrLn . ('\t' :)
     content <- optInput opts
     let tokens = alexScanTokens content
-    when (optDumpTokens opts) $ do
+    when (optDumpTokens opts) $
         putStrLn (showTokens tokens)
     case parse tokens of
         Right ast -> 
             when (optDumpAst opts) $ do
+                putStrLn (show ast) 
                 putStrLn . getString . prettyPrint $ ast
         Left err ->
             putStrLn err
