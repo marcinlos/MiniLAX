@@ -14,13 +14,13 @@ executable mlax
   ghc-options:     -Wall
   other-modules:   
                    MiniLAX.Parsing.Lexer,
-                   MiniLAX.Parsing.Printer,
                    MiniLAX.Parsing.Parser,
                    MiniLAX.AST,
                    MiniLAX.Location,
                    MiniLAX.Options,
                    MiniLAX.AST.Printer,
-                   MiniLAX.Printer
+                   MiniLAX.Printer,
+                   MiniLAX.Parsing.TokenPrinter
 
 test-suite Test
   type:            exitcode-stdio-1.0

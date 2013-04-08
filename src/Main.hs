@@ -5,21 +5,26 @@ module Main (
 
 -- |
 import Control.Monad
-
 import System.Environment
+import System.IO
+import System.Exit
+
 import MiniLAX.Options
 
 import MiniLAX.Parsing.Lexer
 import MiniLAX.Parsing.Parser
-import MiniLAX.Parsing.Printer
+import MiniLAX.Parsing.TokenPrinter
 
 import MiniLAX.Printer
-import MiniLAX.AST.Printer
+import MiniLAX.AST.Printer ()
 
 
 
 main :: IO ()
-main = do
+main = run `catch` errorHandler
+
+run :: IO ()
+run = do
     (opts, args) <- parseOptions =<< getArgs
     when (optVerbose opts) $ do
         putStrLn "Verbose mode ON"
@@ -31,9 +36,15 @@ main = do
         putStrLn (showTokens tokens)
     case parse tokens of
         Right ast -> 
-            when (optDumpAst opts) $ do
-                putStrLn (show ast) 
-                putStrLn . getString . prettyPrint $ ast
+            when (optDumpAst opts) $ putStrLn . s $ ast
+                where s = if optDumpAstFlat opts
+                              then show 
+                              else getString . prettyPrint
         Left err ->
             putStrLn err
+            
+errorHandler :: IOError -> IO ()
+errorHandler e = do
+    hPutStrLn stderr $ "Error: " ++ show e
+    exitFailure
         

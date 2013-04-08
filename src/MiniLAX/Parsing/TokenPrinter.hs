@@ -1,4 +1,4 @@
-module MiniLAX.Parsing.Printer (
+module MiniLAX.Parsing.TokenPrinter (
     showTokens
 ) where
 

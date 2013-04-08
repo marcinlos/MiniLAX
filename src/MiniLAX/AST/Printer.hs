@@ -1,5 +1,3 @@
-{-# LANGUAGE ExistentialQuantification #-}
-    
 -- | Module containing functions used to pretty-print AST
 module MiniLAX.AST.Printer where
     
@@ -7,59 +5,11 @@ module MiniLAX.AST.Printer where
 import MiniLAX.Location
 
 import MiniLAX.Printer
-
 import MiniLAX.AST
-import Control.Applicative
-import Control.Monad
-
-
-data ASTVal = forall a. (ASTElement a) => ASTVal { unwrap :: a }
-
-class ASTElement a where
-    children :: a -> [ASTVal]
-    
-    
-instance ASTElement Type where
-    children (ArrayT e _ _) = ASTVal <$> [e]
-    children _ = []
-    
-instance ASTElement BinOp where
-    children = const []
-    
-instance ASTElement UnOp where
-    children = const []
-    
-    
-instance ASTElement Expr where
-    children (BinaryExpr op left right) = ASTVal op : (ASTVal <$> [left, right])
-    children (UnaryExpr op expr) = [ASTVal op, ASTVal expr]
-    children _ = []
-     
-instance ASTElement Var where
-    children (VarIndex base index) = [ASTVal base, ASTVal index]
-    children _ = []
-    
-    
-instance ASTElement Stat where
-    children (AssignStat left right) = [ASTVal left, ASTVal right]
-    children (ProcStat _ args) = ASTVal <$> args
-    children (CondStat cond t f) = ASTVal cond : (ASTVal <$> t) ++ (ASTVal <$> f)
-    children (LoopStat cond body) = ASTVal cond : (ASTVal <$> body)
-    
-instance ASTElement Decl where
-    children (ProcDecl _ body) = [ASTVal body]
-    children _ = []
-    
-instance ASTElement Block where
-    children (Block decls stats) = (ASTVal <$> decls) ++ (ASTVal <$> stats)
-    
-instance ASTElement Program where
-    children (Program _ body) = [ASTVal body]
-
 
     
 instance Printable Program where
-    prettyPrint (Program name body) = do
+    prettyPrint (Program name body) =
         put "Program '" %% name %% "' " >> bracketed (prettyPrint body)
         
 instance Printable Block where
@@ -88,12 +38,6 @@ instance Printable Type where
     prettyPrint IntegerT = put "INTEGER" >> endl
     prettyPrint RealT    = put "REAL" >> endl
     prettyPrint BooleanT = put "BOOLEAN" >> endl
-    
-instance Printable BinOp where
-    prettyPrint = put . show
-    
-instance Printable UnOp where
-    prettyPrint = put . show
     
 instance Printable ParamType where
     prettyPrint VarParam = put "Var" >> endl

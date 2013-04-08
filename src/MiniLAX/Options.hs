@@ -1,7 +1,7 @@
 -- | Module containing definitions and actions for command line options
 module MiniLAX.Options where
 
--- |
+-- | Imports
 import System.Exit
 import System.Console.GetOpt
 import System.IO
@@ -20,7 +20,8 @@ data Options = Options {
     optOutput      :: BS.ByteString -> IO (),
     optVerbose     :: Bool,
     optDumpTokens  :: Bool,
-    optDumpAst     :: Bool
+    optDumpAst     :: Bool,
+    optDumpAstFlat :: Bool
 }
 
 -- | Default value of the options
@@ -31,7 +32,8 @@ defaultOptions = Options {
     optInput       = getContents,
     optOutput      = BS.putStr,
     optDumpTokens  = False,
-    optDumpAst     = False
+    optDumpAst     = False,
+    optDumpAstFlat = False
 }
 
 
@@ -85,7 +87,17 @@ options = [
         "Prints tokens of the input and terminates",
         
     Option [] ["dump-ast"]
-        (NoArg $ \opts -> return opts { optDumpAst = True })
+        (OptArg (\val opts -> do
+            opts' <- case val of 
+                Just mode 
+                    | mode == "flat" -> 
+                          return opts { optDumpAstFlat = True }
+                    | otherwise -> do
+                          hPutStrLn stderr $ "Unknown mode `" ++ mode ++ "'"
+                          return opts
+                Nothing   -> return opts
+            return opts' { optDumpAst = True }) 
+            "MODE")
         "Prints original form of AST of the input and terminates",
         
 

@@ -32,11 +32,13 @@ data UnOp = Not
 data ParamType = VarParam | ValParam
     deriving (Eq, Show)
 
+-- | Whole program - name and ordinary block, ending with a dot
 data Program = Program {
     progName :: String,
     progBody :: Block
 } deriving (Eq, Show)
 
+-- | Code block - declarations and statements
 data Block = Block {
     blockDecls :: DeclSeq,
     blockStats :: StatSeq
@@ -44,6 +46,7 @@ data Block = Block {
 
 type DeclSeq = [Decl]
 
+-- | Formal parameters of a function
 data Formal = Formal {
     formalName :: String,
     formalType :: Type,
@@ -52,6 +55,7 @@ data Formal = Formal {
 
 type FormalSeq = [Formal]
 
+-- | Declaration of a variable/procedure
 data Decl = 
     VarDecl {
         varName :: String,
@@ -63,6 +67,7 @@ data Decl =
     } 
   deriving (Eq, Show)
   
+-- | Procedure signature - name and parameter definitions
 data ProcHead = ProcHead {
     procName   :: String,
     procParams :: FormalSeq
@@ -70,6 +75,7 @@ data ProcHead = ProcHead {
 
 type ExprSeq = [Expr]
 
+-- | Expression, many kinds of
 data Expr = 
     BinaryExpr {
         binOp    :: BinOp,
@@ -86,9 +92,11 @@ data Expr =
   | BoolConst BoolLiteral
   deriving (Eq, Show)
   
+-- | Boolean literal value
 data BoolLiteral = TrueL | FalseL
     deriving (Eq, Show)
   
+-- | a[i1][i2]...[in] expression
 data Var = VarId String 
   | VarIndex {
         varBase  :: Var,
@@ -98,6 +106,7 @@ data Var = VarId String
   
 type StatSeq = [Stat]
 
+-- | Statement
 data Stat = 
     AssignStat {
         assignLeft  :: Var,
@@ -118,7 +127,7 @@ data Stat =
     }
   deriving (Eq, Show)
 
-
+-- | MiniLAX data type
 data Type = IntegerT | RealT | BooleanT 
   | ArrayT { 
         arrayElemType :: Type, 
