@@ -18,6 +18,8 @@ import MiniLAX.Parsing.TokenPrinter
 import MiniLAX.Printer
 import MiniLAX.AST.Printer ()
 
+import MiniLAX.Backend.JVM.Skeleton
+
 
 
 main :: IO ()
@@ -42,6 +44,8 @@ run = do
                               else getString . prettyPrint
         Left err ->
             putStrLn err
+    when (optDumpJasmin opts) $
+        putStrLn . getString $ example
             
 errorHandler :: IOError -> IO ()
 errorHandler e = do

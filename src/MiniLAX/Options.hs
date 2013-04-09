@@ -21,7 +21,8 @@ data Options = Options {
     optVerbose     :: Bool,
     optDumpTokens  :: Bool,
     optDumpAst     :: Bool,
-    optDumpAstFlat :: Bool
+    optDumpAstFlat :: Bool,
+    optDumpJasmin  :: Bool
 }
 
 -- | Default value of the options
@@ -33,7 +34,8 @@ defaultOptions = Options {
     optOutput      = BS.putStr,
     optDumpTokens  = False,
     optDumpAst     = False,
-    optDumpAstFlat = False
+    optDumpAstFlat = False,
+    optDumpJasmin  = False
 }
 
 
@@ -100,6 +102,9 @@ options = [
             "MODE")
         "Prints original form of AST of the input and terminates",
         
+    Option "j" ["dump-jasmin"]
+        (NoArg $ \opts -> return opts { optDumpJasmin = True })
+        "Outputs jasmin assembly generated from the input",
 
     Option "v" ["verbose"]
         (NoArg $ \opts -> return opts { optVerbose = True })
