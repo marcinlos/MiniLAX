@@ -2,6 +2,7 @@
 module MiniLAX.Parsing.Parser where
 
 import MiniLAX.Parsing.Lexer
+import MiniLAX.Parsing
 import MiniLAX.AST as AST
 }
 
@@ -147,19 +148,5 @@ LoopStat :: { Stat }
   : "WHILE" Expr "DO" StatSeq "END"         { LoopStat $2 $4 }
   
 
-{
 
--- | Type of error message
-type ParseError = String
-
-type ParseMonad = Either ParseError
- 
-parseError :: [Token] -> a
-parseError tokens = 
-    error $ "Parse error at " ++ (showPos pos) ++ " [at " ++ token ++ "]"
-    where (token, pos) = case tokens of
-              t : _ -> (show t, tokenPos t)
-              _     -> ("", AlexPn 0 0 0) 
-
-}
 

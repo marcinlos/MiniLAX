@@ -34,11 +34,10 @@ instance Monoid PrintState where
         getContent = id,
         getIndent = 0
     }
-    mappend (PrintState c _) (PrintState c' i') =
-        PrintState {
-            getContent = c . c',
-            getIndent = i'
-        }
+    mappend (PrintState c _) (PrintState c' i') = PrintState {
+        getContent = c . c',
+        getIndent = i'
+    }
 
 
 newtype PrinterMonad a = PrinterMonad { 

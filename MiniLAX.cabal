@@ -21,7 +21,8 @@ executable mlax
                    MiniLAX.AST.Printer,
                    MiniLAX.Printer,
                    MiniLAX.Parsing.TokenPrinter,
-                   MiniLAX.Backend.JVM.Skeleton
+                   MiniLAX.Backend.JVM.Skeleton,
+                   MiniLAX.Parsing
 
 test-suite Test
   type:            exitcode-stdio-1.0
@@ -37,7 +38,8 @@ test-suite Test
                   MiniLAX.Options,
                   MiniLAX.AST.Printer,
                   MiniLAX.Printer,
-                  MiniLAX.Backend.JVM.Skeleton
+                  MiniLAX.Backend.JVM.Skeleton,
+                  MiniLAX.Parsing
   hs-source-dirs:  
                   tests,
                   src
