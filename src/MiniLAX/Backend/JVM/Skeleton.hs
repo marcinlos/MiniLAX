@@ -4,7 +4,7 @@ module MiniLAX.Backend.JVM.Skeleton where
 -- | Printer may come in handy
 import MiniLAX.Printer
 
-import Control.Monad
+--import Control.Monad
 
 -- | Prints jasmin directives used at the beginning of the file 
 classHeader :: String -> PrinterMonad ()

@@ -4,7 +4,9 @@ module Main (
 ) where
 
 -- |
+import Prelude hiding (catch)
 import Control.Monad
+import Control.Exception
 import System.Environment
 import System.IO
 import System.Exit
@@ -19,8 +21,6 @@ import MiniLAX.Printer
 import MiniLAX.AST.Printer ()
 
 import MiniLAX.Backend.JVM.Skeleton
-
-
 
 main :: IO ()
 main = run `catch` errorHandler

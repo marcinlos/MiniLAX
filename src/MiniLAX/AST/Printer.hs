@@ -2,7 +2,7 @@
 module MiniLAX.AST.Printer where
     
 -- | To print locations of AST elements
-import MiniLAX.Location
+-- import MiniLAX.Location
 
 import MiniLAX.Printer
 import MiniLAX.AST

@@ -10,7 +10,9 @@ executable mlax
   build-depends:   
                    base >= 4,
                    bytestring,
-                   array
+                   array,
+                   containers,
+                   HList
   ghc-options:     -Wall
   other-modules:   
                    MiniLAX.Parsing.Lexer,
@@ -22,13 +24,17 @@ executable mlax
                    MiniLAX.Printer,
                    MiniLAX.Parsing.TokenPrinter,
                    MiniLAX.Backend.JVM.Skeleton,
-                   MiniLAX.Parsing
+                   MiniLAX.Parsing,
+                   MiniLAX.Diagnostic
 
 test-suite Test
   type:            exitcode-stdio-1.0
   main-is:         Test.hs
   ghc-options:     -Wall -rtsopts
-  build-depends:   base >= 4, HTF > 0.9
+  build-depends:   
+                   base >= 4, HTF > 0.9,
+                   HUnit,
+                   containers
   other-modules:   
                   MiniLAX.Parsing.Lexer,
                   MiniLAX.Parsing.LexerTest,
@@ -39,7 +45,8 @@ test-suite Test
                   MiniLAX.AST.Printer,
                   MiniLAX.Printer,
                   MiniLAX.Backend.JVM.Skeleton,
-                  MiniLAX.Parsing
+                  MiniLAX.Parsing,
+                  MiniLAX.Diagnostic
   hs-source-dirs:  
                   tests,
                   src
