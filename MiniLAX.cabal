@@ -13,7 +13,8 @@ executable mlax
                    array,
                    containers,
                    HList,
-                   mtl
+                   mtl,
+                   transformers
   ghc-options:     -Wall
   other-modules:   
                    MiniLAX.Parsing.Lexer,
@@ -38,7 +39,8 @@ test-suite Test
                    base >= 4, HTF > 0.9,
                    HUnit,
                    containers,
-                   mtl
+                   mtl,
+                   transformers
   other-modules:   
                   MiniLAX.Parsing.Lexer,
                   MiniLAX.Parsing.LexerTest,

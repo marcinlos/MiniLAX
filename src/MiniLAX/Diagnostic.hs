@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 -- | Definitions of compiler diagnostic messages
 module MiniLAX.Diagnostic where
 
@@ -5,7 +6,10 @@ module MiniLAX.Diagnostic where
 import MiniLAX.Location
 
 import Data.Maybe
+import Data.Sequence
 import Control.Applicative
+import Control.Monad.Trans.Writer
+import Control.Monad.Identity
 
 -- | Type of the message
 data MsgType =
@@ -32,7 +36,7 @@ instance Show Message where
         where typeInfo = show tp ++ " "
               locInfo = fromMaybe "" (show <$> loc) 
               
-
+-- | Auxilary functions shortening emiting diagnostics 
 msgSuccess :: Maybe Location -> String -> Message
 msgSuccess = Message Success
 
@@ -50,3 +54,60 @@ msgError   = Message Error
 
 msgFatal :: Maybe Location -> String -> Message
 msgFatal   = Message Fatal
+
+-- | Class of diagnostic-enabled monad
+class (Monad m) => MonadDiag m where
+    emit :: Message -> m ()
+    
+    emitSuccess :: Maybe Location -> String -> m ()
+    emitSuccess = (emit .) . Message Success
+    
+    emitInfo :: Maybe Location -> String -> m ()
+    emitInfo = (emit .) . Message Info
+    
+    emitDebug :: Maybe Location -> String -> m ()
+    emitDebug = (emit .) . Message Debug
+    
+    emitWarn :: Maybe Location -> String -> m ()
+    emitWarn = (emit .) . Message Warn
+    
+    emitError :: Maybe Location -> String -> m ()
+    emitError = (emit .) . Message Error
+    
+    emitFatal :: Maybe Location -> String -> m ()
+    emitFatal = (emit .) . Message Fatal
+    
+    
+type DiagT m a = WriterT (Seq Message) m a
+
+type Diag a = DiagT Identity a
+
+-- | Instance definition for 
+instance (Monad m) => MonadDiag (DiagT m) where
+    emit = tell . singleton 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    
