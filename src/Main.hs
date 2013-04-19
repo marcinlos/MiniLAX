@@ -18,7 +18,10 @@ import MiniLAX.Parsing.Parser
 import MiniLAX.Parsing.TokenPrinter
 
 import MiniLAX.Printer
+import MiniLAX.AST
 import MiniLAX.AST.Printer ()
+
+import MiniLAX.Static.Symbols
 
 import MiniLAX.Backend.JVM.Skeleton
 
@@ -37,11 +40,9 @@ run = do
     when (optDumpTokens opts) $
         putStrLn (showTokens tokens)
     case parse tokens of
-        Right ast -> 
-            when (optDumpAst opts) $ putStrLn . s $ ast
-                where s = if optDumpAstFlat opts
-                              then show 
-                              else getString . prettyPrint
+        Right ast -> do
+            maybeDumpAST opts ast
+            print . collectTypes $ ast
         Left err ->
             putStrLn err
     when (optDumpJasmin opts) $
@@ -51,4 +52,13 @@ errorHandler :: IOError -> IO ()
 errorHandler e = do
     hPutStrLn stderr $ "Error: " ++ show e
     exitFailure
-        
+    
+
+maybeDumpAST :: Options -> Program -> IO ()
+maybeDumpAST opts ast = 
+    when (optDumpAst opts) $ putStrLn (s ast)
+    where s = if optDumpAstFlat opts
+                  then show 
+                  else getString . prettyPrint
+
+    

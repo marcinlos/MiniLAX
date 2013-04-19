@@ -21,39 +21,39 @@ import MiniLAX.AST as AST
   IntConst          { Int _ $$ }
   RealConst         { Float _ $$ }
                     
-  ':'               { Sym _ ":" }  
-  ';'               { Sym _ ";" }
-  '+'               { Sym _ "+" }  
-  '*'               { Sym _ "*" }
-  '('               { Sym _ "(" }
-  ')'               { Sym _ ")" }
-  '.'               { Sym _ "." }
-  ','               { Sym _ "," }
-  '['               { Sym _ "[" }
-  ']'               { Sym _ "]" }
-  '<'               { Sym _ "<" }
-  ":="              { Sym _ ":=" }
-  ".."              { Sym _ ".." }
+  ':'               { Sym $$ ":" }  
+  ';'               { Sym $$ ";" }
+  '+'               { Sym $$ "+" }  
+  '*'               { Sym $$ "*" }
+  '('               { Sym $$ "(" }
+  ')'               { Sym $$ ")" }
+  '.'               { Sym $$ "." }
+  ','               { Sym $$ "," }
+  '['               { Sym $$ "[" }
+  ']'               { Sym $$ "]" }
+  '<'               { Sym $$ "<" }
+  ":="              { Sym $$ ":=" }
+  ".."              { Sym $$ ".." }
   
-  "ARRAY"           { Keyword _ "ARRAY" }
-  "BEGIN"           { Keyword _ "BEGIN" }
-  "BOOLEAN"         { Keyword _ "BOOLEAN" }
-  "DECLARE"         { Keyword _ "DECLARE" }
-  "DO"              { Keyword _ "DO" }
-  "ELSE"            { Keyword _ "ELSE" }
-  "END"             { Keyword _ "END" }
-  "FALSE"           { Keyword _ "FALSE" }
-  "IF"              { Keyword _ "IF" }
-  "INTEGER"         { Keyword _ "INTEGER" }
-  "NOT"             { Keyword _ "NOT" }
-  "OF"              { Keyword _ "OF" }
-  "PROCEDURE"       { Keyword _ "PROCEDURE" }
-  "PROGRAM"         { Keyword _ "PROGRAM" }
-  "REAL"            { Keyword _ "REAL" }
-  "THEN"            { Keyword _ "THEN" }
-  "TRUE"            { Keyword _ "TRUE" }
-  "VAR"             { Keyword _ "VAR" }
-  "WHILE"           { Keyword _ "WHILE" }
+  "ARRAY"           { Keyword $$ "ARRAY" }
+  "BEGIN"           { Keyword $$ "BEGIN" }
+  "BOOLEAN"         { Keyword $$ "BOOLEAN" }
+  "DECLARE"         { Keyword $$ "DECLARE" }
+  "DO"              { Keyword $$ "DO" }
+  "ELSE"            { Keyword $$ "ELSE" }
+  "END"             { Keyword $$ "END" }
+  "FALSE"           { Keyword $$ "FALSE" }
+  "IF"              { Keyword $$ "IF" }
+  "INTEGER"         { Keyword $$ "INTEGER" }
+  "NOT"             { Keyword $$ "NOT" }
+  "OF"              { Keyword $$ "OF" }
+  "PROCEDURE"       { Keyword $$ "PROCEDURE" }
+  "PROGRAM"         { Keyword $$ "PROGRAM" }
+  "REAL"            { Keyword $$ "REAL" }
+  "THEN"            { Keyword $$ "THEN" }
+  "TRUE"            { Keyword $$ "TRUE" }
+  "VAR"             { Keyword $$ "VAR" }
+  "WHILE"           { Keyword $$ "WHILE" }
   
 %%
 

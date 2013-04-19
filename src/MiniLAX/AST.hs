@@ -5,7 +5,7 @@ module MiniLAX.AST (
     Decl (..),
     DeclSeq,
     ProcHead (..),
-    ParamType (..),
+    ParamKind (..),
     Formal (..),
     FormalSeq,
     Type (..),
@@ -29,7 +29,7 @@ data UnOp = Not
     deriving (Eq, Show)
 
 -- | Represents var/val nature of procedure parameters    
-data ParamType = VarParam | ValParam
+data ParamKind = VarParam | ValParam
     deriving (Eq, Show)
 
 -- | Whole program - name and ordinary block, ending with a dot
@@ -50,7 +50,7 @@ type DeclSeq = [Decl]
 data Formal = Formal {
     formalName :: String,
     formalType :: Type,
-    formalKind :: ParamType
+    formalKind :: ParamKind
 } deriving (Eq, Show)
 
 type FormalSeq = [Formal]

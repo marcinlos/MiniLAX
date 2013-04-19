@@ -9,7 +9,13 @@ DECLARE
   fib : ARRAY [1..10] OF INTEGER;
   PROCEDURE F(n : INTEGER);
   DECLARE
-    k: INTEGER
+    k: INTEGER;
+    PROCEDURE dupa(n : BOOLEAN; kk : INTEGER);
+    DECLARE
+      j: INTEGER
+    BEGIN
+      k := 9
+    END
   BEGIN
     fib[1] := 1;
     fib[2] := 1;

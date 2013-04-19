@@ -3,7 +3,7 @@
 --   code.
 module MiniLAX.Location (
     Location (..),
-    SourceElement (..)
+    HasLocation (..)
 ) where
 
 -- | Position information for source code constructs
@@ -13,8 +13,8 @@ data Location = Location {
     getCol  :: Int
 }
 
--- | Typeclass of a source code level construct, having location
-class SourceElement a where
+-- | Typeclass of a being having location
+class HasLocation a where
     getLocation :: a -> Location
     
 -- | Pretty-prints location information 

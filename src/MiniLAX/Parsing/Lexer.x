@@ -7,7 +7,7 @@ module MiniLAX.Parsing.Lexer (
     showPos
 ) where
 
-import MiniLAX.Location (SourceElement (..), Location (..))
+import MiniLAX.Location (HasLocation (..), Location (..))
 
 }
 
@@ -75,7 +75,7 @@ tokenPos (Err p)        = p
 alexToLocation :: AlexPosn -> Location
 alexToLocation (AlexPn _ line col) = Location undefined line col
 
-instance SourceElement Token where
+instance HasLocation Token where
     getLocation = alexToLocation . tokenPos
 
 -- | Helper function to parse floating point numbers. The problem with standard

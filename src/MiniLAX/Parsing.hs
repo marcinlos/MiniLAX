@@ -1,8 +1,11 @@
+-- |
 module MiniLAX.Parsing where
 
 -- we need token type
 import MiniLAX.Parsing.Lexer
 --import MiniLAX.AST
+--import MiniLAX.TreeDecoration
+-- import Control.Monad.State
 
 -- | Type of error message
 type ParseError = String

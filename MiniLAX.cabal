@@ -12,7 +12,8 @@ executable mlax
                    bytestring,
                    array,
                    containers,
-                   HList
+                   HList,
+                   mtl
   ghc-options:     -Wall
   other-modules:   
                    MiniLAX.Parsing.Lexer,
@@ -25,7 +26,9 @@ executable mlax
                    MiniLAX.Parsing.TokenPrinter,
                    MiniLAX.Backend.JVM.Skeleton,
                    MiniLAX.Parsing,
-                   MiniLAX.Diagnostic
+                   MiniLAX.Diagnostic,
+                   MiniLAX.Static.Symbols,
+                   MiniLAX.Static.Types
 
 test-suite Test
   type:            exitcode-stdio-1.0
@@ -34,7 +37,8 @@ test-suite Test
   build-depends:   
                    base >= 4, HTF > 0.9,
                    HUnit,
-                   containers
+                   containers,
+                   mtl
   other-modules:   
                   MiniLAX.Parsing.Lexer,
                   MiniLAX.Parsing.LexerTest,
@@ -46,7 +50,10 @@ test-suite Test
                   MiniLAX.Printer,
                   MiniLAX.Backend.JVM.Skeleton,
                   MiniLAX.Parsing,
-                  MiniLAX.Diagnostic
+                  MiniLAX.Diagnostic,
+                  MiniLAX.TreeDecoration,
+                  MiniLAX.Static.Symbols,
+                  MiniLAX.Static.Types
   hs-source-dirs:  
                   tests,
                   src

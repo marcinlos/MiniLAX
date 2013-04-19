@@ -39,7 +39,7 @@ instance Printable Type where
     prettyPrint RealT    = put "REAL" >> endl
     prettyPrint BooleanT = put "BOOLEAN" >> endl
     
-instance Printable ParamType where
+instance Printable ParamKind where
     prettyPrint VarParam = put "Var" >> endl
     prettyPrint ValParam = put "Val" >> endl
     
