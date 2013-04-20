@@ -62,23 +62,41 @@ class (Monad m) => MonadDiag m where
     emitSuccess :: Maybe Location -> String -> m ()
     emitSuccess = (emit .) . Message Success
     
+    emitSuccess_ :: String -> m()
+    emitSuccess_ = emitSuccess Nothing
+    
     emitInfo :: Maybe Location -> String -> m ()
     emitInfo = (emit .) . Message Info
+    
+    emitInfo_ :: String -> m()
+    emitInfo_ = emitInfo Nothing
     
     emitDebug :: Maybe Location -> String -> m ()
     emitDebug = (emit .) . Message Debug
     
+    emitDebug_ :: String -> m()
+    emitDebug_ = emitDebug Nothing
+    
     emitWarn :: Maybe Location -> String -> m ()
     emitWarn = (emit .) . Message Warn
+    
+    emitWarn_ :: String -> m()
+    emitWarn_ = emitWarn Nothing
     
     emitError :: Maybe Location -> String -> m ()
     emitError = (emit .) . Message Error
     
+    emitError_ :: String -> m()
+    emitError_ = emitError Nothing
+    
     emitFatal :: Maybe Location -> String -> m ()
     emitFatal = (emit .) . Message Fatal
     
+    emitFatal_ :: String -> m()
+    emitFatal_ = emitFatal Nothing
     
-type DiagT m a = WriterT (Seq Message) m a
+    
+type DiagT m = WriterT (Seq Message) m
 
 type Diag a = DiagT Identity a
 
@@ -87,27 +105,3 @@ instance (Monad m) => MonadDiag (WriterT (Seq Message) m) where
     emit = tell . singleton 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    

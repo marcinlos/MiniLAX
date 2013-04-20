@@ -6,19 +6,9 @@ import MiniLAX.Parsing.Lexer
 --import MiniLAX.AST
 --import MiniLAX.TreeDecoration
 -- import Control.Monad.State
-
--- | Type of error message
-type ParseError = String
-
--- | Type of parsing monad
-type ParseMonad = Either ParseError
-
-getAST :: ParseMonad a -> Either ParseError a
-getAST = id
+import MiniLAX.Compiler
 
 
-
- 
 parseError :: [Token] -> a
 parseError tokens = 
     error $ "Parse error at " ++ showPos pos ++ " [at " ++ token ++ "]"

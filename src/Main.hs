@@ -1,16 +1,24 @@
+-- | Entry point of an application
 module Main (
     main, 
     Options(..) 
 ) where
 
 -- |
-import Prelude hiding (catch)
-import Control.Monad
-import Control.Exception
+import Prelude hiding (catch, mapM)
 import System.Environment
 import System.IO
 import System.Exit
 
+import Data.Traversable as Trav (forM)
+
+import Control.Applicative
+
+import Control.Exception
+import Control.Monad
+import Control.Monad.Trans
+
+import MiniLAX.Compiler
 import MiniLAX.Options
 
 import MiniLAX.Parsing.Lexer
@@ -24,9 +32,11 @@ import MiniLAX.Static.Symbols
 
 import MiniLAX.Backend.JVM.Skeleton
 
-main :: IO ()
-main = run `catch` errorHandler
 
+main :: IO ()
+main = run' `catch` errorHandler
+
+{-
 run :: IO ()
 run = do
     (opts, args) <- parseOptions =<< getArgs
@@ -46,18 +56,59 @@ run = do
             putStrLn err
     when (optDumpJasmin opts) $
         putStrLn . getString $ example
+        
+-}
+
+        
+run' :: IO ()
+run' = do
+    (opts, args) <- parseOptions =<< getArgs
+    (res, diag) <- runC opts args $ do
+        greeting
+        content <- liftIO $ optInput opts
+        let tokens = alexScanTokens content
+        maybeDumpTokens tokens
+        ast <- parse tokens
+        maybeDumpAST ast
+
+    void $ Trav.forM diag print
+    case res of 
+        Right _ -> putStrLn "Success"
+        Left err -> do
+            hPutStrLn stderr $ "Error: " ++ err
+            exitFailure
             
+
 errorHandler :: IOError -> IO ()
 errorHandler e = do
     hPutStrLn stderr $ "Error: " ++ show e
     exitFailure
     
+    
+greeting :: Compiler ()
+greeting = do
+    verbose <- optVerbose <$> config
+    args    <- getNonopts
+    liftIO $ when verbose $ do
+        putStrLn "Verbose mode ON"
+        putStrLn "Input file(s): "
+        forM_ args $ putStrLn . ('\t' :)
+    
+    
+maybeDumpTokens :: [Token] -> Compiler ()
+maybeDumpTokens tokens = do
+    shouldDump <- getOpt optDumpTokens
+    when shouldDump $
+        liftIO $ putStrLn $ showTokens tokens
 
-maybeDumpAST :: Options -> Program -> IO ()
-maybeDumpAST opts ast = 
-    when (optDumpAst opts) $ putStrLn (s ast)
-    where s = if optDumpAstFlat opts
-                  then show 
-                  else getString . prettyPrint
+
+maybeDumpAST :: Program -> Compiler ()
+maybeDumpAST ast = do
+    shouldDump <- getOpt optDumpAst
+    when shouldDump $ do
+        flat <- getOpt optDumpAstFlat
+        let s = if flat then show 
+                        else getString . prettyPrint 
+        liftIO $ putStrLn (s ast)
 
     

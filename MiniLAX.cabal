@@ -14,7 +14,8 @@ executable mlax
                    containers,
                    HList,
                    mtl,
-                   transformers
+                   transformers,
+                   dlist
   ghc-options:     -Wall
   other-modules:   
                    MiniLAX.Parsing.Lexer,
@@ -28,7 +29,8 @@ executable mlax
                    MiniLAX.Parsing,
                    MiniLAX.Diagnostic,
                    MiniLAX.Static.Symbols,
-                   MiniLAX.Static.Types
+                   MiniLAX.Static.Types,
+                   MiniLAX.Compiler
 
 test-suite Test
   type:            exitcode-stdio-1.0
@@ -39,7 +41,8 @@ test-suite Test
                    HUnit,
                    containers,
                    mtl,
-                   transformers
+                   transformers,
+                   dlist
   other-modules:   
                   MiniLAX.Parsing.Lexer,
                   MiniLAX.Parsing.LexerTest,
@@ -53,7 +56,8 @@ test-suite Test
                   MiniLAX.Diagnostic,
                   MiniLAX.TreeDecoration,
                   MiniLAX.Static.Symbols,
-                  MiniLAX.Static.Types
+                  MiniLAX.Static.Types,
+                  MiniLAX.Compiler
   hs-source-dirs:  
                   tests,
                   src

@@ -3,13 +3,14 @@ module MiniLAX.Parsing.Parser where
 
 import MiniLAX.Parsing.Lexer
 import MiniLAX.Parsing
+import MiniLAX.Compiler
 import MiniLAX.AST as AST
 }
 
 %name parse
 %tokentype { Token }
 %error { parseError }
-%monad { ParseMonad }
+%monad { Compiler }
 
 %left NOT_P
 %left '*'
