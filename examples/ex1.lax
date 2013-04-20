@@ -10,9 +10,10 @@ DECLARE
   PROCEDURE F(n : INTEGER);
   DECLARE
     k: INTEGER;
-    PROCEDURE dupa(n : BOOLEAN; kk : INTEGER);
+    PROCEDURE dupa(VAR n : BOOLEAN; kk : INTEGER);
     DECLARE
-      j: INTEGER
+      j: INTEGER;
+      gg: ARRAY [4..9] OF BOOLEAN
     BEGIN
       k := 9
     END

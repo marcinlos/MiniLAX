@@ -4,7 +4,10 @@ module MiniLAX.Static.Symbols where
 -- |
 -- import MiniLAX.Static.Types
 import qualified MiniLAX.AST as AST 
+import MiniLAX.Printer
 import Data.Map hiding (foldl)
+import Data.Traversable
+import Control.Monad hiding (forM)
 
 
 type SMap = Map String
@@ -31,8 +34,8 @@ data Procedure = Procedure {
 } deriving (Show)
 
 
-collectTypes :: AST.Program -> Procedure
-collectTypes (AST.Program name body) = 
+collectSymbols :: AST.Program -> Procedure
+collectSymbols (AST.Program name body) = 
     Procedure {
         procName = name,
         procParams = empty,
@@ -75,10 +78,33 @@ formalToParam :: AST.Formal -> Parameter
 formalToParam (AST.Formal n t k) = Parameter n t k
 
 
+-- | Pretty-printing of gathered information
 
+printVars :: SMap Variable -> PrinterMonad ()
+printVars m = do 
+    put "Vars "; bracketed $ 
+        forM m $ \(Variable name tp) ->
+            put name %% ": " %% show tp >> endl
+        
+printParams :: SMap Parameter -> PrinterMonad ()
+printParams m = do
+    put "Params "; bracketed $
+        forM m $ \(Parameter name tp kind) ->
+            put name %% ": " %% show tp %% " (" %% show kind %% ")" >> endl
+            
 
-
-
+printProc :: String -> Procedure -> PrinterMonad ()
+printProc path Procedure {
+        procName = name,
+        procParams = params,
+        procVars = vars,
+        procNested = nested
+    } = do
+        let path' = path ++ "/" ++ name 
+        put "Proc " %% path' %% " "; bracketed $ do
+            printVars vars
+            printParams params
+        void $ forM nested (printProc path')
 
 
 

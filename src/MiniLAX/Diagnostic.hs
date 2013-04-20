@@ -33,7 +33,7 @@ data Message = Message {
 instance Show Message where
     show (Message tp loc text) = 
         typeInfo ++ locInfo ++ text
-        where typeInfo = show tp ++ " "
+        where typeInfo = "[" ++ show tp ++ "] "
               locInfo = fromMaybe "" (show <$> loc) 
               
 -- | Auxilary functions shortening emiting diagnostics 
@@ -82,8 +82,8 @@ type DiagT m a = WriterT (Seq Message) m a
 
 type Diag a = DiagT Identity a
 
--- | Instance definition for 
-instance (Monad m) => MonadDiag (DiagT m) where
+-- | Instance definition for DiagT
+instance (Monad m) => MonadDiag (WriterT (Seq Message) m) where
     emit = tell . singleton 
 
 

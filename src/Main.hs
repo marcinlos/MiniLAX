@@ -41,7 +41,7 @@ run = do
     case parse tokens of
         Right ast -> do
             maybeDumpAST opts ast
-            print . collectTypes $ ast
+            putStrLn . getString . printProc "" . collectSymbols $ ast
         Left err ->
             putStrLn err
     when (optDumpJasmin opts) $

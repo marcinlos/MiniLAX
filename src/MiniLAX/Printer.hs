@@ -57,6 +57,9 @@ instance Monad PrinterMonad where
             in (a, s' `mappend` s'')
     }
     
+instance Functor PrinterMonad where
+    fmap = (=<<) . (return .)
+    
 getIndentLvl :: PrinterMonad Int
 getIndentLvl = PrinterMonad $ \s ->
     let n = getIndent s 
