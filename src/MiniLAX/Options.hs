@@ -12,30 +12,38 @@ import qualified Data.ByteString.Lazy as BS
 version :: String
 version = "0.01"
 
+-- | Auxilary function to parse input
+readMaybe :: (Read a) => String -> Maybe a
+readMaybe s = case reads s of
+              [(x, "")] -> Just x
+              _ -> Nothing
+
         
 -- | Single record to contain all the program options          
 data Options = Options { 
-    optInputName   :: String,
-    optInput       :: IO String,
-    optOutput      :: BS.ByteString -> IO (),
-    optVerbose     :: Bool,
-    optDumpTokens  :: Bool,
-    optDumpAst     :: Bool,
-    optDumpAstFlat :: Bool,
-    optDumpJasmin  :: Bool
+    optInputName               :: String,
+    optInput                   :: IO String,
+    optOutput                  :: BS.ByteString -> IO (),
+    optVerbosity               :: Int,
+    optDumpTokens              :: Bool,
+    optDumpAst                 :: Bool,
+    optDumpAstFlat             :: Bool,
+    optDumpSymbolTable         :: Bool,
+    optDumpJasmin              :: Bool
 }
 
 -- | Default value of the options
 defaultOptions :: Options
 defaultOptions = Options {
-    optVerbose     = False,
-    optInputName   = "-",
-    optInput       = getContents,
-    optOutput      = BS.putStr,
-    optDumpTokens  = False,
-    optDumpAst     = False,
-    optDumpAstFlat = False,
-    optDumpJasmin  = False
+    optInputName               = "-",
+    optInput                   = getContents,
+    optOutput                  = BS.putStr,
+    optVerbosity               = 3,
+    optDumpTokens              = False,
+    optDumpAst                 = False,
+    optDumpAstFlat             = False,
+    optDumpSymbolTable         = False,
+    optDumpJasmin              = False
 }
 
 
@@ -64,15 +72,14 @@ parseNonopts args opts =
             hPutStrLn stderr $ "Warning: More than one input file, " ++ 
                 "only " ++ path ++ " shall be processed"
             changeInput path rest
-  where 
-    changeInput path rest = do
-        let input = if path /= "-" 
-                then openFile path ReadMode >>= hGetContents
-                else getContents
-        return (opts {
-            optInput = input, 
-            optInputName = path 
-        }, rest)
+    where changeInput path rest = do
+              let input = if path /= "-" 
+                      then openFile path ReadMode >>= hGetContents
+                      else getContents
+              return (opts {
+                  optInput = input, 
+                  optInputName = path 
+              }, rest)
      
      
 -- | Actions corresponding to all the available options
@@ -102,13 +109,23 @@ options = [
             "MODE")
         "Prints original form of AST of the input and terminates",
         
+    Option "j" ["dump-symbols"]
+        (NoArg $ \opts -> return opts { optDumpSymbolTable = True })
+        "Outputs symbol table generated from the original source",
+        
     Option "j" ["dump-jasmin"]
         (NoArg $ \opts -> return opts { optDumpJasmin = True })
         "Outputs jasmin assembly generated from the input",
 
-    Option "v" ["verbose"]
-        (NoArg $ \opts -> return opts { optVerbose = True })
-        "Enables additional output for debugging purposes",
+    Option "v" ["verbosity"]
+        (ReqArg (\n opts -> 
+            case readMaybe n of
+                Just k -> return opts { optVerbosity = k}
+                Nothing -> do
+                    hPutStrLn stderr $ "Invalid verbosity level `" ++ n ++ "'"
+                    exitSuccess)
+            "N")
+        "Controls level of verbosity - how chatty is the compiler, default is 3",
         
     Option "V" ["version"]
         (NoArg $ \_ -> do

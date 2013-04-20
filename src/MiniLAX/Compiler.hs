@@ -24,7 +24,7 @@ import Control.Monad.Trans.Error
 
 
 newtype Compiler a = Compiler { 
-    runCompiler :: ErrorT String (ReaderT (Options, [String]) (DiagT IO)) a
+    runCompiler :: ErrorT String (DiagT (ReaderT (Options, [String]) IO)) a
 }
 
 instance Functor Compiler where
@@ -35,27 +35,31 @@ instance Monad Compiler where
     m >>= f = Compiler $ runCompiler m >>= (runCompiler . f)
 
 instance MonadDiag Compiler where
-    emit = Compiler . lift . lift . emit
+    emit = Compiler . lift . emit
     
 instance MonadIO Compiler where
     liftIO = Compiler . liftIO 
 
+liftReader :: ReaderT (Options, [String]) IO a -> Compiler a
+liftReader = Compiler . lift . lift
+
 getOpt :: (Options -> a) -> Compiler a
-getOpt f = Compiler $ f . fst <$> lift ask
+getOpt f = liftReader $ asks (f . fst)
 
 getNonopts :: Compiler [String]
-getNonopts = Compiler $ snd <$> lift ask
+getNonopts = liftReader $ asks snd
 
 config :: Compiler Options
-config = Compiler $ fst <$> lift ask
+config = liftReader $ asks fst
 
     
 runC :: Options -> [String] -> Compiler a -> IO (Either String a, Seq Message)
 runC opts args c =
     let err = runCompiler c
-        rd  = runErrorT err
-        dg  = runReaderT rd (opts, args)
-    in runWriterT dg
+        wr  = runErrorT err
+        rd  = runWriterT wr
+    in runReaderT rd (opts, args)
+    
   
 throwC :: String -> Compiler a
 throwC = Compiler . throwError

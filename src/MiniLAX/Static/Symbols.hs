@@ -5,6 +5,8 @@ module MiniLAX.Static.Symbols where
 -- import MiniLAX.Static.Types
 import qualified MiniLAX.AST as AST 
 import MiniLAX.Printer
+import MiniLAX.Compiler
+
 import Data.Map hiding (foldl)
 import Data.Traversable
 import Control.Monad hiding (forM)
@@ -34,9 +36,9 @@ data Procedure = Procedure {
 } deriving (Show)
 
 
-collectSymbols :: AST.Program -> Procedure
+collectSymbols :: AST.Program -> Compiler Procedure
 collectSymbols (AST.Program name body) = 
-    Procedure {
+    return Procedure {
         procName = name,
         procParams = empty,
         procVars = vars,

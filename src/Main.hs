@@ -34,50 +34,28 @@ import MiniLAX.Backend.JVM.Skeleton
 
 
 main :: IO ()
-main = run' `catch` errorHandler
+main = run `catch` errorHandler
 
-{-
+        
 run :: IO ()
 run = do
     (opts, args) <- parseOptions =<< getArgs
-    when (optVerbose opts) $ do
-        putStrLn "Verbose mode ON"
-        putStrLn "Input file(s): "
-        forM_ args $ putStrLn . ('\t' :)
-    content <- optInput opts
-    let tokens = alexScanTokens content
-    when (optDumpTokens opts) $
-        putStrLn (showTokens tokens)
-    case parse tokens of
-        Right ast -> do
-            maybeDumpAST opts ast
-            putStrLn . getString . printProc "" . collectSymbols $ ast
-        Left err ->
-            putStrLn err
-    when (optDumpJasmin opts) $
-        putStrLn . getString $ example
-        
--}
-
-        
-run' :: IO ()
-run' = do
-    (opts, args) <- parseOptions =<< getArgs
     (res, diag) <- runC opts args $ do
         greeting
-        content <- liftIO $ optInput opts
-        let tokens = alexScanTokens content
+        let input = liftIO $ optInput opts
+        tokens <- alexScanTokens <$> input
         maybeDumpTokens tokens
         ast <- parse tokens
         maybeDumpAST ast
-
+        sym <- collectSymbols ast
+        maybeDumpSymbols sym
+        return ()
     void $ Trav.forM diag print
     case res of 
-        Right _ -> putStrLn "Success"
+        Right _ -> return ()
         Left err -> do
             hPutStrLn stderr $ "Error: " ++ err
             exitFailure
-            
 
 errorHandler :: IOError -> IO ()
 errorHandler e = do
@@ -87,9 +65,9 @@ errorHandler e = do
     
 greeting :: Compiler ()
 greeting = do
-    verbose <- optVerbose <$> config
-    args    <- getNonopts
-    liftIO $ when verbose $ do
+    verbosity <- optVerbosity <$> config
+    args      <- getNonopts
+    liftIO $ when (verbosity > 3) $ do
         putStrLn "Verbose mode ON"
         putStrLn "Input file(s): "
         forM_ args $ putStrLn . ('\t' :)
@@ -110,5 +88,12 @@ maybeDumpAST ast = do
         let s = if flat then show 
                         else getString . prettyPrint 
         liftIO $ putStrLn (s ast)
-
+        
+        
+maybeDumpSymbols :: Procedure -> Compiler ()
+maybeDumpSymbols syms = do
+    shouldDump <- getOpt optDumpSymbolTable
+    when shouldDump $
+        let s = printProc "" syms
+        in liftIO $ putStrLn $ getString s
     
