@@ -19,7 +19,6 @@ import MiniLAX.Parsing.TokenPrinter
 
 import MiniLAX.Printer
 import MiniLAX.AST
-import MiniLAX.AST.Printer ()
 
 import MiniLAX.Static.Symbols
 
