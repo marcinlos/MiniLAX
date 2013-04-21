@@ -11,6 +11,7 @@ import System.IO
 import System.Exit
 
 import Data.Traversable as Trav (forM)
+import Data.Either
 
 import Control.Applicative
 
@@ -21,29 +22,28 @@ import Control.Monad.Trans
 import MiniLAX.Compiler
 import MiniLAX.Options
 
-import MiniLAX.Parsing.Lexer
-import MiniLAX.Parsing.Parser
-import MiniLAX.Parsing.TokenPrinter
+import MiniLAX.Parsing.Lexer2
+import MiniLAX.Parsing.LexerDef ()
+import MiniLAX.Parsing.Parser2
 
 import MiniLAX.Printer
 import MiniLAX.AST
 
 import MiniLAX.Static.Symbols
 
-import MiniLAX.Backend.JVM.Skeleton
+import MiniLAX.Backend.JVM.Skeleton ()
 
 
 main :: IO ()
 main = run `catch` errorHandler
 
-        
 run :: IO ()
 run = do
     (opts, args) <- parseOptions =<< getArgs
     (res, diag) <- runC opts args $ do
         greeting
-        let input = liftIO $ optInput opts
-        tokens <- alexScanTokens <$> input
+        input  <- liftIO $ optInput opts
+        tokens <- tokenize input
         maybeDumpTokens tokens
         ast <- parse tokens
         maybeDumpAST ast
@@ -70,14 +70,18 @@ greeting = do
         putStrLn "Verbose mode ON"
         putStrLn "Input file(s): "
         forM_ args $ putStrLn . ('\t' :)
+        
+        
+tokenize :: String -> Compiler [Token]
+tokenize s = either throwC return (scanTokens s)
     
     
 maybeDumpTokens :: [Token] -> Compiler ()
 maybeDumpTokens tokens = do
     shouldDump <- getOpt optDumpTokens
     when shouldDump $
-        liftIO $ putStrLn $ showTokens tokens
-
+        liftIO $ mapM_ print tokens
+        
 
 maybeDumpAST :: Program -> Compiler ()
 maybeDumpAST ast = do
