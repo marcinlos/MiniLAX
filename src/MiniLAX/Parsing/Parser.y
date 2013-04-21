@@ -1,8 +1,8 @@
 {
 module MiniLAX.Parsing.Parser where
 
-import MiniLAX.Parsing.Lexer
 import MiniLAX.Parsing.LexerCore
+import MiniLAX.Parsing.ParserCore
 import MiniLAX.Location
 import MiniLAX.Compiler
 import MiniLAX.AST as AST
@@ -149,14 +149,3 @@ CondStat :: { Stat }
 LoopStat :: { Stat }
   : "WHILE" Expr "DO" StatSeq "END"         { LoopStat $2 $4 }
   
-
-{
-
-parseError :: [Token] -> Compiler a
-parseError tokens = 
-    throwC $ pos ++ ": parse error" ++ tok
-    where (pos, tok) = case tokens of
-              t : _ -> (show (tkPos t), " at " ++ show (tkVal t))
-              _     -> ("At the end of input", "") 
-
-}
