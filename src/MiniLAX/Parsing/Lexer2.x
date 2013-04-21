@@ -1,13 +1,14 @@
 {
 module MiniLAX.Parsing.Lexer2 (
-    Token(..), 
-    scanTokens
-    -- alexScanTokens
+    Token (..), 
+    scanTokens,
+    nextLexeme
 ) where
 
 import MiniLAX.Location
 import MiniLAX.Parsing.LexerDef
 
+import Control.Applicative
 import Control.Monad
 import Data.Maybe
 
@@ -63,29 +64,32 @@ scanTokens s = runAlex s scanLoop
  
 scanLoop :: Alex [Token]
 scanLoop = do
-    (a, v) <- addLocInfo alexMonadScan
-    when (isJust v) $ lexerError (fromJust v)
+    a <-nextLexeme
     if tkVal a == EOF then return []
                       else scanLoop >>= return . (a :)
                       
-addLocInfo :: Alex a -> Alex (a, Maybe String)
-addLocInfo (Alex next) = Alex next'
+nextLexeme :: Alex Token
+nextLexeme = addLocInfo alexMonadScan >>= either lexerError return 
+
+                      
+addLocInfo :: Alex a -> Alex (Either String a)
+addLocInfo (Alex next) = Alex (Right <$> next')
     where next' s = case next s of
-              Right (st, v) -> Right (st, (v, Nothing))
-              Left msg      -> Right (s,  (undefined, Just msg)) 
+              Right (st, val) -> (st, Right val)
+              Left msg        -> (s,  Left msg) 
               
               
 lexerError :: String -> Alex a
 lexerError msg = do
-    (p, c, _, input) <- alexGetInput
+    (p, _, _, input) <- alexGetInput
     let inp = trim $ takeMax 30 (firstLine input)
         pos = if null input
                   then "at the end of file"
                   else if null inp 
                       then " before end of line"
                       else " at '" ++ inp ++ "'"
-        disp = if (null msg) then "Lexer error"
-                             else trim msg
+        disp = if null msg then "Lexer error"
+                           else trim msg
     alexError $ disp ++ " at " ++ showAlexPosn p ++ pos
               
 showAlexPosn :: AlexPosn -> String

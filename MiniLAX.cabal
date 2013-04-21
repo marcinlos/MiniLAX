@@ -12,10 +12,8 @@ executable mlax
                    bytestring,
                    array,
                    containers,
-                   HList,
                    mtl,
-                   transformers,
-                   dlist
+                   transformers
   ghc-options:     -Wall
   other-modules:   
                    MiniLAX.Parsing.Lexer,
@@ -30,7 +28,9 @@ executable mlax
                    MiniLAX.Diagnostic,
                    MiniLAX.Static.Symbols,
                    MiniLAX.Static.Types,
-                   MiniLAX.Compiler
+                   MiniLAX.Compiler,
+                   MiniLAX.Parsing.LexerDef,
+                   MiniLAX.Parsing.Lexer2
 
 test-suite Test
   type:            exitcode-stdio-1.0
@@ -57,7 +57,9 @@ test-suite Test
                   MiniLAX.TreeDecoration,
                   MiniLAX.Static.Symbols,
                   MiniLAX.Static.Types,
-                  MiniLAX.Compiler
+                  MiniLAX.Compiler,
+                  MiniLAX.Parsing.LexerDef,
+                  MiniLAX.Parsing.Lexer2
   hs-source-dirs:  
                   tests,
                   src
