@@ -19,6 +19,9 @@ module MiniLAX.AST (
     UnOp (..),
 ) where
 
+-- | Types appear as parts of the code
+import MiniLAX.Static.Types
+
 -- | To avoid orphaned instances
 import MiniLAX.Printer
 
@@ -29,10 +32,6 @@ data BinOp = Plus | Times | Less
 
 -- | Enumeration of unary operators
 data UnOp = Not
-    deriving (Eq, Show)
-
--- | Represents var/val nature of procedure parameters    
-data ParamKind = VarParam | ValParam
     deriving (Eq, Show)
 
 -- | Whole program - name and ordinary block, ending with a dot
@@ -130,14 +129,6 @@ data Stat =
     }
   deriving (Eq, Show)
 
--- | MiniLAX data type
-data Type = IntegerT | RealT | BooleanT 
-  | ArrayT { 
-        arrayElemType :: Type, 
-        arrayLower    :: Int, 
-        arrayUpper    :: Int 
-    } 
-  deriving (Eq, Show)
   
 -- ----------------------------------------------
 -- Pretty-printing
@@ -162,21 +153,6 @@ instance Printable Decl where
         put "Proc "; bracketed $ do
             prettyPrint info
             prettyPrint body
-        
-instance Printable Type where
-    prettyPrint (ArrayT el low high) = do
-        put "Array "; bracketed $ do
-            put "Lower bound: " %% show low >> endl
-            put "Upper bound: " %% show high >> endl
-            put "Element type " >> bracketed (prettyPrint el) 
-
-    prettyPrint IntegerT = put "INTEGER" >> endl
-    prettyPrint RealT    = put "REAL" >> endl
-    prettyPrint BooleanT = put "BOOLEAN" >> endl
-    
-instance Printable ParamKind where
-    prettyPrint VarParam = put "Var" >> endl
-    prettyPrint ValParam = put "Val" >> endl
     
 instance Printable ProcHead where
     prettyPrint (ProcHead name params) = do

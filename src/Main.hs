@@ -49,7 +49,6 @@ run = do
         maybeDumpAST ast
         sym <- collectSymbols ast
         maybeDumpSymbols sym
-        return ()
     void $ Trav.forM diag print
     case res of 
         Right _ -> return ()
