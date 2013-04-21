@@ -11,7 +11,6 @@ import System.IO
 import System.Exit
 
 import Data.Traversable as Trav (forM)
-import Data.Either
 
 import Control.Applicative
 
@@ -22,10 +21,9 @@ import Control.Monad.Trans
 import MiniLAX.Compiler
 import MiniLAX.Options
 
-import MiniLAX.Parsing.Lexer2
-import MiniLAX.Parsing.LexerDef ()
-import MiniLAX.Parsing.Parser2
-
+import MiniLAX.Parsing.Lexer
+import MiniLAX.Parsing.LexerCore ()
+import MiniLAX.Parsing.Parser
 import MiniLAX.Printer
 import MiniLAX.AST
 
@@ -53,7 +51,7 @@ run = do
     case res of 
         Right _ -> return ()
         Left err -> do
-            hPutStrLn stderr $ "Error: " ++ err
+            hPutStrLn stderr err
             exitFailure
 
 errorHandler :: IOError -> IO ()

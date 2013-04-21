@@ -1,5 +1,5 @@
 -- | 
-module MiniLAX.Parsing.LexerDef where
+module MiniLAX.Parsing.LexerCore where
 
 -- | We use position information 
 import MiniLAX.Location
@@ -26,7 +26,7 @@ data Token = Token {
 instance Show Token where
     show Token { tkVal = val, tkPos = pos }
         = show val ++ " " ++ show pos
-
+        
 data AlexUserState = AlexUserState
 
 alexInitUserState :: AlexUserState
@@ -39,6 +39,10 @@ readFloat :: String -> Float
 readFloat s @ ('.' : _) = read ('0' : s)
 readFloat s = read s
 
+
+-- | Interface of a parser compatible with the monadic lexer
+class (Monad m) => MonadParser m where
+    feed :: Token -> m a -> m a
 
  
 

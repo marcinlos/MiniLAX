@@ -12,8 +12,6 @@ module MiniLAX.Compiler (
 import MiniLAX.Diagnostic
 import MiniLAX.Options
 
-import Control.Applicative
-
 import Data.Sequence
 
 import Control.Monad.IO.Class

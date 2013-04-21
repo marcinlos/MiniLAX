@@ -2,7 +2,8 @@
 module MiniLAX.Parsing.Parser where
 
 import MiniLAX.Parsing.Lexer
-import MiniLAX.Parsing
+import MiniLAX.Parsing.LexerCore
+import MiniLAX.Location
 import MiniLAX.Compiler
 import MiniLAX.AST as AST
 }
@@ -17,44 +18,44 @@ import MiniLAX.AST as AST
 %left '+'
 %left '<'
 
-%token 
-  Id                { Id _ $$ }
-  IntConst          { Int _ $$ }
-  RealConst         { Float _ $$ }
-                    
-  ':'               { Sym $$ ":" }  
-  ';'               { Sym $$ ";" }
-  '+'               { Sym $$ "+" }  
-  '*'               { Sym $$ "*" }
-  '('               { Sym $$ "(" }
-  ')'               { Sym $$ ")" }
-  '.'               { Sym $$ "." }
-  ','               { Sym $$ "," }
-  '['               { Sym $$ "[" }
-  ']'               { Sym $$ "]" }
-  '<'               { Sym $$ "<" }
-  ":="              { Sym $$ ":=" }
-  ".."              { Sym $$ ".." }
-  
-  "ARRAY"           { Keyword $$ "ARRAY" }
-  "BEGIN"           { Keyword $$ "BEGIN" }
-  "BOOLEAN"         { Keyword $$ "BOOLEAN" }
-  "DECLARE"         { Keyword $$ "DECLARE" }
-  "DO"              { Keyword $$ "DO" }
-  "ELSE"            { Keyword $$ "ELSE" }
-  "END"             { Keyword $$ "END" }
-  "FALSE"           { Keyword $$ "FALSE" }
-  "IF"              { Keyword $$ "IF" }
-  "INTEGER"         { Keyword $$ "INTEGER" }
-  "NOT"             { Keyword $$ "NOT" }
-  "OF"              { Keyword $$ "OF" }
-  "PROCEDURE"       { Keyword $$ "PROCEDURE" }
-  "PROGRAM"         { Keyword $$ "PROGRAM" }
-  "REAL"            { Keyword $$ "REAL" }
-  "THEN"            { Keyword $$ "THEN" }
-  "TRUE"            { Keyword $$ "TRUE" }
-  "VAR"             { Keyword $$ "VAR" }
-  "WHILE"           { Keyword $$ "WHILE" }
+%token
+  Id                { Token (Id $$) _ _ }
+  IntConst          { Token (Int $$) _ _ }
+  RealConst         { Token (Float $$) _ _ }
+
+  ':'               { Token (Sym ":") _ _ }  
+  ';'               { Token (Sym ";") _ _ }
+  '+'               { Token (Sym "+") _ _ }  
+  '*'               { Token (Sym "*") _ _ }
+  '('               { Token (Sym "(") _ _ }
+  ')'               { Token (Sym ")") _ _ }
+  '.'               { Token (Sym ".") _ _ }
+  ','               { Token (Sym ",") _ _ }
+  '['               { Token (Sym "[") _ _ }
+  ']'               { Token (Sym "]") _ _ }
+  '<'               { Token (Sym "<") _ _ }
+  ":="              { Token (Sym ":=") _ _ }
+  ".."              { Token (Sym "..") _ _ }
+
+  "ARRAY"           { Token (Keyword "ARRAY") _ _ }
+  "BEGIN"           { Token (Keyword "BEGIN") _ _ }
+  "BOOLEAN"         { Token (Keyword "BOOLEAN") _ _ }
+  "DECLARE"         { Token (Keyword "DECLARE") _ _ }
+  "DO"              { Token (Keyword "DO") _ _ }
+  "ELSE"            { Token (Keyword "ELSE") _ _ }
+  "END"             { Token (Keyword "END") _ _ }
+  "FALSE"           { Token (Keyword "FALSE") _ _ }
+  "IF"              { Token (Keyword "IF") _ _ }
+  "INTEGER"         { Token (Keyword "INTEGER") _ _ }
+  "NOT"             { Token (Keyword "NOT") _ _ }
+  "OF"              { Token (Keyword "OF") _ _ }
+  "PROCEDURE"       { Token (Keyword "PROCEDURE") _ _ }
+  "PROGRAM"         { Token (Keyword "PROGRAM") _ _ }
+  "REAL"            { Token (Keyword "REAL") _ _ }
+  "THEN"            { Token (Keyword "THEN") _ _ }
+  "TRUE"            { Token (Keyword "TRUE") _ _ }
+  "VAR"             { Token (Keyword "VAR") _ _ }
+  "WHILE"           { Token (Keyword "WHILE") _ _ }
   
 %%
 
@@ -149,5 +150,13 @@ LoopStat :: { Stat }
   : "WHILE" Expr "DO" StatSeq "END"         { LoopStat $2 $4 }
   
 
+{
 
+parseError :: [Token] -> Compiler a
+parseError tokens = 
+    throwC $ pos ++ ": parse error" ++ tok
+    where (pos, tok) = case tokens of
+              t : _ -> (show (tkPos t), " at " ++ show (tkVal t))
+              _     -> ("At the end of input", "") 
 
+}

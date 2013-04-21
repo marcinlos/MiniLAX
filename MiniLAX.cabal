@@ -16,22 +16,16 @@ executable mlax
                    transformers
   ghc-options:     -Wall
   other-modules:   
-                   MiniLAX.Parsing.Lexer,
-                   MiniLAX.Parsing.Parser,
                    MiniLAX.AST,
                    MiniLAX.Location,
                    MiniLAX.Options,
                    MiniLAX.Printer,
-                   MiniLAX.Parsing.TokenPrinter,
                    MiniLAX.Backend.JVM.Skeleton,
-                   MiniLAX.Parsing,
                    MiniLAX.Diagnostic,
                    MiniLAX.Static.Symbols,
                    MiniLAX.Static.Types,
                    MiniLAX.Compiler,
-                   MiniLAX.Parsing.LexerDef,
-                   MiniLAX.Parsing.Lexer2,
-                   MiniLAX.Parsing.Parser2
+                   MiniLAX.Parsing.LexerCore
 
 test-suite Test
   type:            exitcode-stdio-1.0
@@ -45,23 +39,18 @@ test-suite Test
                    transformers,
                    dlist
   other-modules:   
-                  MiniLAX.Parsing.Lexer,
                   MiniLAX.Parsing.LexerTest,
-                  MiniLAX.Parsing.Parser,
                   MiniLAX.AST,
                   MiniLAX.Location,
                   MiniLAX.Options,
                   MiniLAX.Printer,
                   MiniLAX.Backend.JVM.Skeleton,
-                  MiniLAX.Parsing,
                   MiniLAX.Diagnostic,
                   MiniLAX.TreeDecoration,
                   MiniLAX.Static.Symbols,
                   MiniLAX.Static.Types,
                   MiniLAX.Compiler,
-                  MiniLAX.Parsing.LexerDef,
-                  MiniLAX.Parsing.Lexer2,
-                  MiniLAX.Parsing.Parser2
+                  MiniLAX.Parsing.LexerCore
   hs-source-dirs:  
                   tests,
                   src

@@ -1,17 +1,18 @@
 {
 module MiniLAX.Parsing.Lexer (
     Token (..), 
-    alexScanTokens,
-    AlexPosn (AlexPn),
-    tokenPos,
-    showPos
+    scanTokens,
+    nextLexeme
 ) where
 
-import MiniLAX.Location (HasLocation (..), Location (..))
+import MiniLAX.Location
+import MiniLAX.Parsing.LexerCore
+
+import Control.Applicative
 
 }
 
-%wrapper "posn"
+%wrapper "monadUserState"
 
 $letter = [a-zA-Z] 
 $digit  = 0-9
@@ -25,64 +26,83 @@ tokens :-
 
   $white+                          ;
   "(*" (. | \n)* "*)"              ;
-  @int_const                       { \p s -> Int p (read s) }
-  @real_const                      { \p s -> Float p (readFloat s) }
-  [\:\;\=\+\-\*\/\(\)\.\,\[\]\<]   { Sym }
-  ":="                             { Sym }
-  ".."                             { Sym }
+  @int_const                       { mkT (Int . read) }
+  @real_const                      { mkT (Float . readFloat) }
+  [\:\;\=\+\-\*\/\(\)\.\,\[\]\<]   { mkT Sym }
+  ":="                             { mkT Sym }
+  ".."                             { mkT Sym }
   
   "ARRAY" | "BEGIN" | "BOOLEAN" | "DECLARE" | "DO" | "ELSE" | "END" |
   "FALSE" | "IF" | "INTEGER" | "NOT"| "OF" | "PROCEDURE" | "PROGRAM" |
-  "REAL" | "THEN" | "TRUE" | "VAR" | "WHILE" { Keyword }
+  "REAL" | "THEN" | "TRUE" | "VAR" | "WHILE" { mkT Keyword }
   
-  @id                              { Id }
+  @id                              { mkT Id }
 
 {
 
--- | Token structure
-data Token =
-    Sym AlexPosn String
-  | Id AlexPosn String
-  | Int AlexPosn Int 
-  | Float AlexPosn Float
-  | Keyword AlexPosn String
-  | Err AlexPosn 
-  deriving (Eq)
+alex2Loc :: AlexPosn -> Location
+alex2Loc (AlexPn _ line col) = Location "" line col
 
-  
--- | Converts AlexPosn into a string "(line, col)"
-showPos :: AlexPosn -> String
-showPos (AlexPn _ line col) = show (line, col)
+alexEOF :: Alex Token
+alexEOF = return $ Token EOF noloc ""
+    where noloc = Location "-" 0 0
 
-instance Show Token where 
-    show (Sym _ s)      = "'" ++ s ++ "'"
-    show (Id _ s)       = "id " ++ s
-    show (Int _ n)      = "int " ++ show n
-    show (Float _ v)    = "float " ++ show v
-    show (Keyword _ w)  = "'" ++ w ++ "'"
-    show (Err _)        = "<error>"
+type LexerAction r = AlexInput -> Int -> Alex r
+
+          
+mkT :: (String -> TokenVal) -> LexerAction Token
+mkT v (p, _, _, str) len = return $ Token (v lexeme) loc lexeme
+    where loc     = alex2Loc p
+          lexeme  = take len str
+          
+          
+scanTokens :: String -> Either String [Token]
+scanTokens s = runAlex s scanLoop
+ 
+ 
+scanLoop :: Alex [Token]
+scanLoop = do
+    a <-nextLexeme
+    if tkVal a == EOF then return []
+                      else scanLoop >>= return . (a :)
+                      
+nextLexeme :: Alex Token
+nextLexeme = addLocInfo alexMonadScan >>= either lexerError return 
+
+                      
+addLocInfo :: Alex a -> Alex (Either String a)
+addLocInfo (Alex next) = Alex (Right <$> next')
+    where next' s = case next s of
+              Right (st, val) -> (st, Right val)
+              Left msg        -> (s,  Left msg) 
+              
+              
+lexerError :: String -> Alex a
+lexerError msg = do
+    (p, _, _, input) <- alexGetInput
+    let inp = trim $ takeMax 30 (firstLine input)
+        pos = if null input
+                  then "at the end of file"
+                  else if null inp 
+                      then " before end of line"
+                      else " at '" ++ inp ++ "'"
+        disp = if null msg then "Lexer error"
+                           else trim msg
+    alexError $ disp ++ " at " ++ showAlexPosn p ++ pos
+              
+showAlexPosn :: AlexPosn -> String
+showAlexPosn = show . alex2Loc
+              
+trim :: String -> String
+trim = reverse . trimFront . reverse . trimFront
+    where trimFront = dropWhile (== ' ' )
     
--- | Function retrieving token position
-tokenPos :: Token -> AlexPosn
-tokenPos (Sym p _)      = p
-tokenPos (Id p _)       = p
-tokenPos (Int p _)      = p
-tokenPos (Float p _)    = p
-tokenPos (Keyword p _)  = p
-tokenPos (Err p)        = p
+firstLine :: String -> String
+firstLine = filter (/= '\r') . takeWhile (/= '\n')
 
--- | Converts AlexPosn to Location 
-alexToLocation :: AlexPosn -> Location
-alexToLocation (AlexPn _ line col) = Location undefined line col
+takeMax :: Int -> String -> String
+takeMax n s = if length s > n then take n s
+                              else s
 
-instance HasLocation Token where
-    getLocation = alexToLocation . tokenPos
-
--- | Helper function to parse floating point numbers. The problem with standard
---   read  function is that it cannot handle numbers with missing 0 before 
---   the dot
-readFloat :: String -> Float
-readFloat s @ ('.' : _) = read ('0' : s)
-readFloat s = read s
 
 }
