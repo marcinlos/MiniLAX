@@ -6,9 +6,11 @@ import MiniLAX.Parsing.ParserCore
 import MiniLAX.Location
 import MiniLAX.Compiler
 import MiniLAX.AST as AST
+
+import MiniLAX.Diagnostic
 }
 
-%name parse
+%name doParse
 %tokentype { Token }
 %error { parseError }
 %monad { Compiler }
@@ -19,9 +21,9 @@ import MiniLAX.AST as AST
 %left '<'
 
 %token
-  Id                { Token (Id $$) _ _ }
-  IntConst          { Token (Int $$) _ _ }
-  RealConst         { Token (Float $$) _ _ }
+  Id                { Token (Id _) _ _ }
+  IntConst          { Token (Int _) _ _ }
+  RealConst         { Token (Float _) _ _ }
 
   ':'               { Token (Sym ":") _ _ }  
   ';'               { Token (Sym ";") _ _ }
@@ -60,7 +62,7 @@ import MiniLAX.AST as AST
 %%
 
 Program :: { Program }
-  : "PROGRAM" Id ';' Block '.'              { Program $2 $4 }
+  : "PROGRAM" Id ';' Block '.'              { Program (idV $2) $4 }
   
 ProcDecl :: { Decl }
   : ProcHead ';' Block                      { ProcDecl $1 $3 }
@@ -78,16 +80,16 @@ Decl :: { Decl }
   | ProcDecl                                { $1 }
   
 ProcHead :: { ProcHead }
-  : "PROCEDURE" Id                          { ProcHead $2 [] }
-  | "PROCEDURE" Id '(' FormalSeq ')'        { ProcHead $2 $4 }
+  : "PROCEDURE" Id                          { ProcHead (idV $2) [] }
+  | "PROCEDURE" Id '(' FormalSeq ')'        { ProcHead (idV $2) $4 }
   
 FormalSeq :: { FormalSeq }
   : Formal                                  { [$1] }
   | FormalSeq ';' Formal                    { $3 : $1 }
   
 Formal :: { Formal }
-  : "VAR" Id ':' Type                       { Formal $2 $4 VarParam }
-  | Id ':' Type                             { Formal $1 $3 ValParam }
+  : "VAR" Id ':' Type                       { Formal (idV $2) $4 VarParam }
+  | Id ':' Type                             { Formal (idV $1) $3 ValParam }
   
 Type :: { Type }
   : SimpleType                              { $1 }
@@ -100,13 +102,13 @@ SimpleType :: { Type }
   
 ArrayType :: { Type }
   : "ARRAY" '[' IntConst ".." IntConst ']' 
-    "OF" Type                               { ArrayT $8 $3 $5 }
+    "OF" Type                               { ArrayT $8 (intV $3) (intV $5) }
   
 VarDecl :: { Decl }
-  : Id ':' Type                             { VarDecl $1 $3 }
+  : Id ':' Type                             { VarDecl (idV $1) $3 }
   
 Var :: { Var }
-  : Id                                      { VarId $1 }
+  : Id                                      { VarId (idV $1) }
   | Var '[' Expr ']'                        { VarIndex $1 $3 }
   
 Expr :: { Expr }
@@ -116,8 +118,8 @@ Expr :: { Expr }
   | "NOT" Expr %prec NOT_P                  { UnaryExpr Not $2 }
   | '(' Expr ')'                            { $2 }
   | Var                                     { VarExpr $1 }
-  | IntConst                                { IntConst $1 }
-  | RealConst                               { RealConst $1 }
+  | IntConst                                { IntConst (intV $1) }
+  | RealConst                               { RealConst (floatV $1) }
   | "TRUE"                                  { BoolConst TrueL }
   | "FALSE"                                 { BoolConst FalseL }
   
@@ -135,8 +137,8 @@ AssignStat :: { Stat }
   : Var ":=" Expr                           { AssignStat $1 $3 }
   
 ProcStat :: { Stat }
-  : Id                                      { ProcStat $1 [] }
-  | Id '(' ExprSeq ')'                      { ProcStat $1 $3 }
+  : Id                                      { ProcStat (idV $1) [] }
+  | Id '(' ExprSeq ')'                      { ProcStat (idV $1) $3 }
   
 ExprSeq :: { ExprSeq }
   : Expr                                    { [$1] }
@@ -149,3 +151,12 @@ CondStat :: { Stat }
 LoopStat :: { Stat }
   : "WHILE" Expr "DO" StatSeq "END"         { LoopStat $2 $4 }
   
+  
+{
+
+parse :: [Token] -> Compiler Program
+parse = doParse
+
+}
+
+

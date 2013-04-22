@@ -10,6 +10,8 @@ import MiniLAX.Parsing.LexerCore
 
 import Control.Applicative
 
+{-# OPTIONS_GHC -fnowarn-missing-signatures, -fnowarn-unused-imports #-}
+
 }
 
 %wrapper "monadUserState"

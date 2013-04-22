@@ -1,5 +1,14 @@
--- | 
-module MiniLAX.Parsing.LexerCore where
+-- | Basic lexer definitions - tokens etc
+module MiniLAX.Parsing.LexerCore (
+    TokenVal (..),
+    Token (..),
+    idV,
+    intV,
+    floatV,
+    readFloat,
+    AlexUserState (..),
+    alexInitUserState
+)where
 
 -- | We use position information 
 import MiniLAX.Location
@@ -27,6 +36,25 @@ instance Show Token where
     show Token { tkVal = val, tkPos = pos }
         = show val ++ " " ++ show pos
         
+-- | Auxilary function fetching identifier from the token.
+--   Warning: not total
+idV :: Token -> String
+idV Token { tkVal = Id val } = val
+idV _ = error "Not an id"
+
+-- | Auxilary function fetching integer from the token.
+--   Warning: not total
+intV :: Token -> Int
+intV Token { tkVal = Int n } = n
+intV _ = error "Not an int"
+
+-- | Auxilary function fetching floating point value from the token.
+--   Warning: not total
+floatV :: Token -> Float
+floatV Token { tkVal = Float x } = x
+floatV _ = error "Not a float"
+        
+
 data AlexUserState = AlexUserState
 
 alexInitUserState :: AlexUserState
@@ -41,8 +69,8 @@ readFloat s = read s
 
 
 -- | Interface of a parser compatible with the monadic lexer
-class (Monad m) => MonadParser m where
-    feed :: Token -> m a -> m a
+-- class (Monad m) => MonadParser m where
+--    feed :: Token -> m a -> m a
 
  
 
