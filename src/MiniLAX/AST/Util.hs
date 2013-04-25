@@ -5,6 +5,8 @@ import MiniLAX.Parsing.LexerCore
 import MiniLAX.AST.Annotated
 import MiniLAX.Location
 
+import qualified MiniLAX.Static.Types as T
+
 
 mkName :: Token -> Name Location
 mkName Token { tkPos = pos, tkVal = Id val } = Name pos val
@@ -32,4 +34,16 @@ mkBin e Token { tkVal = Sym s, tkPos = pos } e' =
           op "<" = Less
           op _   = error "Invalid operator"
 mkBin _ _ _ = error "Invalid operator"
+
+lit2Int :: Literal l -> Int
+lit2Int (LitInt _ n) = n
+lit2Int _ = error "Invalid literal"
  
+ast2Type :: Type l -> T.Type
+ast2Type (TyInt _) = T.IntegerT
+ast2Type (TyReal _) = T.RealT
+ast2Type (TyBoolean _) = T.BooleanT
+ast2Type (TyArray _ t low high) = T.ArrayT t' low' high' 
+    where t'    = ast2Type t 
+          low'  = lit2Int low 
+          high' = lit2Int high

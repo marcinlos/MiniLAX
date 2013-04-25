@@ -20,15 +20,16 @@ import Control.Monad.Trans
 
 import MiniLAX.Compiler
 import MiniLAX.Options
+import MiniLAX.Location
 
 import MiniLAX.Parsing.Lexer
 import MiniLAX.Parsing.LexerCore ()
-import MiniLAX.Parsing.Parser
 import MiniLAX.Printer
-import MiniLAX.AST
-import MiniLAX.AST.PrettyPrint
+--import MiniLAX.AST
+import MiniLAX.AST.Annotated
+--import MiniLAX.AST.PrettyPrint
 
-import qualified MiniLAX.Parsing.Parser2 as P2
+import MiniLAX.Parsing.Parser2
 
 import MiniLAX.Static.Symbols
 
@@ -45,13 +46,11 @@ run = do
         greeting
         input  <- liftIO $ optInput opts
         tokens <- tokenize input
-        ast <- P2.parse tokens
-        liftIO $ print ast
         maybeDumpTokens tokens
-        --ast <- parse tokens
-        --maybeDumpAST ast
-        --sym <- collectSymbols ast
-        --maybeDumpSymbols sym
+        ast <- parse tokens
+        maybeDumpAST ast
+        sym <- collectSymbols ast
+        maybeDumpSymbols sym
     void $ Trav.forM diag print
     case res of 
         Right _ -> return ()
@@ -86,14 +85,13 @@ maybeDumpTokens tokens = do
         liftIO $ mapM_ print tokens
         
 
-maybeDumpAST :: Program -> Compiler ()
+maybeDumpAST :: Program Location -> Compiler ()
 maybeDumpAST ast = do
-    liftIO $ putStrLn (pretty ast)
     shouldDump <- getOpt optDumpAst
     when shouldDump $ do
-        flat <- getOpt optDumpAstFlat
-        let s = if flat then show 
-                        else getString . prettyPrint 
+        -- flat <- getOpt optDumpAstFlat
+        let s = show {- if flat then show 
+                        else getString . prettyPrint -} 
         liftIO $ putStrLn (s ast)
         
         

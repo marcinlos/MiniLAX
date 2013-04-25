@@ -5,15 +5,23 @@
 -- | Annotated syntax tree
 module MiniLAX.AST.Annotated where
 
--- |
+-- | Parameter kind (by reference vs by value) is not defined as an annotated
+-- ast element, since "by value" part lacks any textual representation.
 import MiniLAX.Static.Types (ParamKind)
 
--- | 
+-- | Class of a annotated entity
 class Annotated a l | a -> l where
     attr :: a -> l
+    
+-- | Class of an entity with a name, such as a program, variable etc.
+class HasName a where
+    getName :: a -> String 
 
 -- |
 data Name l = Name l String  
+
+instance HasName (Name l) where
+    getName (Name _ n) = n
 
 instance Annotated (Name l) l where 
     attr (Name l _) = l 
@@ -23,18 +31,13 @@ deriving instance (Show l) => Show (Name l)
 -- |
 data Program l = Program l (Name l) (Block l)
 
+instance HasName (Program l) where
+    getName (Program _ name _) = getName name 
+
 instance Annotated (Program l) l where
     attr (Program l _ _) = l
     
 deriving instance (Show l) => Show (Program l) 
-
--- |
-data ProgramName l = ProgramName l String
-
-instance Annotated (ProgramName l) l where
-    attr (ProgramName l _) = l
-    
-deriving instance (Show l) => Show (ProgramName l) 
 
 -- |
 data Block l = Block l [Decl l] [Stmt l]
@@ -48,7 +51,10 @@ deriving instance (Show l) => Show (Block l)
 data Decl l = 
     VarDecl l (Name l) (Type l)
   | ProcDecl l (ProcHead l) (Block l)
-  
+
+instance HasName (Decl l) where
+    getName (VarDecl _ name _) = getName name
+    getName (ProcDecl _ hd _) = getName hd
   
 instance Annotated (Decl l) l where 
     attr (VarDecl l _ _) = l
@@ -59,6 +65,9 @@ deriving instance (Show l) => Show (Decl l)
 -- |
 data ProcHead l = ProcHead l (Name l) [Formal l]
 
+instance HasName (ProcHead l) where
+    getName (ProcHead _ name _) = getName name
+
 instance Annotated (ProcHead l) l where
     attr (ProcHead l _ _) = l
     
@@ -66,6 +75,9 @@ deriving instance (Show l) => Show (ProcHead l)
 
 -- |
 data Formal l = Formal l ParamKind (Name l) (Type l)
+
+instance HasName (Formal l) where
+    getName (Formal _ _ name _) = getName name
 
 instance Annotated (Formal l) l where
     attr (Formal l _ _ _) = l
@@ -124,6 +136,10 @@ deriving instance (Show l) => Show (Expr l)
 data Variable l = 
     VarName l (Name l)
   | VarIndex l (Variable l) (Expr l)
+  
+instance HasName (Variable l) where
+    getName (VarName _ name) = getName name
+    getName (VarIndex _ var _) = getName var
   
 instance Annotated (Variable l) l where
     attr (VarName l _) = l
