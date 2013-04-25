@@ -26,7 +26,8 @@ executable mlax
                    MiniLAX.Static.Types,
                    MiniLAX.Compiler,
                    MiniLAX.Parsing.LexerCore,
-                   MiniLAX.Parsing.ParserCore
+                   MiniLAX.Parsing.ParserCore,
+                   MiniLAX.AST.Util
 
 test-suite Test
   type:            exitcode-stdio-1.0
@@ -52,7 +53,8 @@ test-suite Test
                   MiniLAX.Static.Types,
                   MiniLAX.Compiler,
                   MiniLAX.Parsing.LexerCore,
-                  MiniLAX.Parsing.ParserCore
+                  MiniLAX.Parsing.ParserCore,
+                  MiniLAX.AST.Util
   hs-source-dirs:  
                   tests,
                   src

@@ -32,7 +32,8 @@ tokens :-
   @real_const                      { mkT (Float . readFloat) }
   [\:\;\=\+\-\*\/\(\)\.\,\[\]\<]   { mkT Sym }
   ":="                             { mkT Sym }
-  ".."                             { mkT Sym }
+  ".."                             { mkT Sym } 
+  "}:->"                           { mkT Sym }
   
   "ARRAY" | "BEGIN" | "BOOLEAN" | "DECLARE" | "DO" | "ELSE" | "END" |
   "FALSE" | "IF" | "INTEGER" | "NOT"| "OF" | "PROCEDURE" | "PROGRAM" |

@@ -26,6 +26,9 @@ import MiniLAX.Parsing.LexerCore ()
 import MiniLAX.Parsing.Parser
 import MiniLAX.Printer
 import MiniLAX.AST
+import MiniLAX.AST.PrettyPrint
+
+import qualified MiniLAX.Parsing.Parser2 as P2
 
 import MiniLAX.Static.Symbols
 
@@ -42,11 +45,13 @@ run = do
         greeting
         input  <- liftIO $ optInput opts
         tokens <- tokenize input
+        ast <- P2.parse tokens
+        liftIO $ print ast
         maybeDumpTokens tokens
-        ast <- parse tokens
-        maybeDumpAST ast
-        sym <- collectSymbols ast
-        maybeDumpSymbols sym
+        --ast <- parse tokens
+        --maybeDumpAST ast
+        --sym <- collectSymbols ast
+        --maybeDumpSymbols sym
     void $ Trav.forM diag print
     case res of 
         Right _ -> return ()
@@ -83,6 +88,7 @@ maybeDumpTokens tokens = do
 
 maybeDumpAST :: Program -> Compiler ()
 maybeDumpAST ast = do
+    liftIO $ putStrLn (pretty ast)
     shouldDump <- getOpt optDumpAst
     when shouldDump $ do
         flat <- getOpt optDumpAstFlat

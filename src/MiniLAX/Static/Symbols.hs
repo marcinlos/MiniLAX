@@ -7,6 +7,8 @@ import qualified MiniLAX.AST as AST
 import MiniLAX.Printer
 import MiniLAX.Compiler
 
+import MiniLAX.Static.Types
+
 import Data.Map hiding (foldl)
 import Data.Traversable
 import Control.Monad hiding (forM)
@@ -17,7 +19,7 @@ type ScopeId = [String]
 
 data Variable = Variable {
     varName      :: String,
-    varType      :: AST.Type
+    varType      :: Type
 } deriving (Show)
 
 

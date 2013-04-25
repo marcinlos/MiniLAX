@@ -90,6 +90,7 @@ data Expr =
     }
   | IntConst Int
   | RealConst Float
+  | MichaelConst 
   | VarExpr Var
   | BoolConst BoolLiteral
   deriving (Eq, Show)
@@ -214,6 +215,9 @@ instance Printable Expr where
         
     prettyPrint (RealConst x) = 
         put "RealConst " %% show x >> endl
+        
+    prettyPrint (MichaelConst) =
+        put "The answer is always 3" >> endl
         
     prettyPrint (BoolConst b) =
         put "BoolConst " %% show b >> endl

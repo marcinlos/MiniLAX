@@ -17,8 +17,7 @@ data Type = IntegerT | RealT | BooleanT
   deriving (Eq, Show)
 
 -- | Represents var/val nature of procedure parameters    
-data ParamKind = VarParam | ValParam
-    deriving (Eq, Show)
+data ParamKind = ByVar | ByVal  deriving (Eq, Show)
 
     
             
@@ -34,5 +33,5 @@ instance Printable Type where
     prettyPrint BooleanT = put "BOOLEAN" >> endl
     
 instance Printable ParamKind where
-    prettyPrint VarParam = put "Var" >> endl
-    prettyPrint ValParam = put "Val" >> endl
+    prettyPrint ByVar = put "Var" >> endl
+    prettyPrint ByVal = put "Val" >> endl

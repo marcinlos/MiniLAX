@@ -1,11 +1,13 @@
 {
-module MiniLAX.Parsing.Parser where
+module MiniLAX.Parsing.Parser2 where
 
 import MiniLAX.Parsing.LexerCore
 import MiniLAX.Parsing.ParserCore
 import MiniLAX.Location
 import MiniLAX.Compiler
-import MiniLAX.AST as AST
+import MiniLAX.AST.Annotated
+import MiniLAX.AST.Util
+import MiniLAX.Static.Types (ParamKind (..))
 
 import MiniLAX.Diagnostic
 }
@@ -62,102 +64,104 @@ import MiniLAX.Diagnostic
   
 %%
 
-Program :: { Program }
-  : "PROGRAM" Id ';' Block '.'              { Program (idV $2) $4 }
+Program :: { Program Location } df
+  : "PROGRAM" Id ';' Block '.'              { Program (tkPos $1) (mkName $2) $4 }
   
-ProcDecl :: { Decl }
-  : ProcHead ';' Block                      { ProcDecl $1 $3 }
+ProcDecl :: { Decl Location }
+  : ProcHead ';' Block                      { ProcDecl (attr $1) $1 $3 }
   
-Block :: { Block }
+Block :: { Block Location }
   : "DECLARE" DeclSeq 
-    "BEGIN" StatSeq "END"                   { Block $2 $4 }
+    "BEGIN" StatSeq "END"                   { Block (tkPos $1) $2 $4 }
   
-DeclSeq :: { DeclSeq }
+DeclSeq :: { [Decl Location] }
   : Decl                                    { [$1] }
   | DeclSeq ';' Decl                        { $3 : $1 }
   
-Decl :: { Decl }
+Decl :: { Decl Location }
   : VarDecl                                 { $1 }
   | ProcDecl                                { $1 }
   
-ProcHead :: { ProcHead }
-  : "PROCEDURE" Id                          { ProcHead (idV $2) [] }
-  | "PROCEDURE" Id '(' FormalSeq ')'        { ProcHead (idV $2) $4 }
+ProcHead :: { ProcHead Location }
+  : "PROCEDURE" Id                          { ProcHead (tkPos $1) (mkName $2) [] }
+  | "PROCEDURE" Id '(' FormalSeq ')'        { ProcHead (tkPos $1) (mkName $2) $4 }
   
-FormalSeq :: { FormalSeq }
+FormalSeq :: { [Formal Location] }
   : Formal                                  { [$1] }
   | FormalSeq ';' Formal                    { $3 : $1 }
   
-Formal :: { Formal }
-  : "VAR" Id ':' Type                       { Formal (idV $2) $4 ByVar }
-  | Id ':' Type                             { Formal (idV $1) $3 ByVal }
+Formal :: { Formal Location }
+  : "VAR" Id ':' Type                       { Formal (tkPos $1) ByVar (mkName $2) $4 }
+  | Id ':' Type                             { Formal (tkPos $1) ByVal (mkName $1) $3 }
   
-Type :: { Type }
+Type :: { Type Location }
   : SimpleType                              { $1 }
   | ArrayType                               { $1 }
  
-SimpleType :: { Type }
-  : "INTEGER"                               { IntegerT }
-  | "REAL"                                  { RealT }
-  | "BOOLEAN"                               { BooleanT }
+SimpleType :: { Type Location }
+  : "INTEGER"                               { TyInt (tkPos $1) }
+  | "REAL"                                  { TyReal (tkPos $1) }
+  | "BOOLEAN"                               { TyBoolean (tkPos $1) }
   
-ArrayType :: { Type }
+ArrayType :: { Type Location }
   : "ARRAY" '[' IntConst ".." IntConst ']' 
-    "OF" Type                               { ArrayT $8 (intV $3) (intV $5) }
+    "OF" Type                               { TyArray (tkPos $1) $8 (mkLit $3) (mkLit $5) }
   
-VarDecl :: { Decl }
-  : Id ':' Type                             { VarDecl (idV $1) $3 }
+VarDecl :: { Decl Location }
+  : Id ':' Type                             { VarDecl (tkPos $1) (mkName $1) $3 }
   
-Var :: { Var }
-  : Id                                      { VarId (idV $1) }
-  | Var '[' Expr ']'                        { VarIndex $1 $3 }
+Var :: { Variable Location }
+  : Id                                      { VarName (tkPos $1) (mkName $1) }
+  | Var '[' Expr ']'                        { VarIndex (attr $1) $1 $3 }
   
-Expr :: { Expr }
-  : Expr '+' Expr                           { BinaryExpr Plus $1 $3 }
-  | Expr '*' Expr                           { BinaryExpr Times $1 $3 }
-  | Expr '<' Expr                           { BinaryExpr Less $1 $3 }
-  | "NOT" Expr %prec NOT_P                  { UnaryExpr Not $2 }
+Expr :: { Expr Location }
+  : Expr '+' Expr                           { mkBin $1 $2 $3 }
+  | Expr '*' Expr                           { mkBin $1 $2 $3 }
+  | Expr '<' Expr                           { mkBin $1 $2 $3 }
+  | "NOT" Expr %prec NOT_P                  { UnaryExpr (tkPos $1) (Not $ tkPos $1) $2 }
   | '(' Expr ')'                            { $2 }
-  | Var                                     { VarExpr $1 }
-  | IntConst                                { IntConst (intV $1) }
-  | RealConst                               { RealConst (floatV $1) }
-  | "}:->"                                  { MichaelConst }
-  | "TRUE"                                  { BoolConst TrueL }
-  | "FALSE"                                 { BoolConst FalseL }
+  | Var                                     { VarExpr (attr $1) $1 }
+  | IntConst                                { mkLitExpr $1 }
+  | RealConst                               { mkLitExpr $1 }
+  | "TRUE"                                  { mkLitExpr $1 }
+  | "FALSE"                                 { mkLitExpr $1 }
+  | "}:->"                                  { mkLitExpr $1 }
   
-StatSeq :: { StatSeq }
+StatSeq :: { [Stmt Location] }
   : Stat                                    { [$1] }
   | StatSeq ';' Stat                        { $3 : $1 }
   
-Stat :: { Stat }
+Stat :: { Stmt Location }
   : AssignStat                              { $1 }
   | ProcStat                                { $1 }
   | CondStat                                { $1 }
   | LoopStat                                { $1 }
   
-AssignStat :: { Stat }
-  : Var ":=" Expr                           { AssignStat $1 $3 }
+AssignStat :: { Stmt Location }
+  : Var ":=" Expr                           { Assignment (attr $1) $1 $3 }
   
-ProcStat :: { Stat }
-  : Id                                      { ProcStat (idV $1) [] }
-  | Id '(' ExprSeq ')'                      { ProcStat (idV $1) $3 }
+ProcStat :: { Stmt Location }
+  : Id                                      { ProcCall (tkPos $1) (mkName $1) [] }
+  | Id '(' ExprSeq ')'                      { ProcCall (tkPos $1) (mkName $1) $3 }
   
-ExprSeq :: { ExprSeq }
+ExprSeq :: { [Expr Location] }
   : Expr                                    { [$1] }
   | ExprSeq ',' Expr                        { $3 : $1 }
   
-CondStat :: { Stat }
+CondStat :: { Stmt Location }
   : "IF" Expr "THEN" StatSeq 
-    "ELSE" StatSeq "END"                    { CondStat $2 $4 $6 }
+    "ELSE" StatSeq "END"                    { IfThenElse (tkPos $1) $2 $4 $6 }
   
-LoopStat :: { Stat }
-  : "WHILE" Expr "DO" StatSeq "END"         { LoopStat $2 $4 }
+LoopStat :: { Stmt Location }
+  : "WHILE" Expr "DO" StatSeq "END"         { While (tkPos $1) $2 $4 }
   
   
 {
 
-parse :: [Token] -> Compiler Program
+parse :: [Token] -> Compiler (Program Location)
 parse = doParse
+
+
 
 }
 
