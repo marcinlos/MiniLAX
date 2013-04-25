@@ -25,7 +25,6 @@ import MiniLAX.Location
 import MiniLAX.Parsing.Lexer
 import MiniLAX.Parsing.LexerCore ()
 import MiniLAX.Printer
---import MiniLAX.AST
 import MiniLAX.AST.Annotated
 --import MiniLAX.AST.PrettyPrint
 

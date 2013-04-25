@@ -1,5 +1,5 @@
 {
-module MiniLAX.Parsing.Parser where
+module MiniLAX.Parsing.Parser (parse) where
 
 import MiniLAX.Parsing.LexerCore
 import MiniLAX.Parsing.ParserCore

@@ -1,6 +1,6 @@
 -- | Complier (top-level) monad
 module MiniLAX.Compiler (
-    Compiler (..),
+    CompilerT (..),
     getOpt,
     getNonopts,
     config,
@@ -21,37 +21,37 @@ import Control.Monad.Trans.Writer
 import Control.Monad.Trans.Error
 
 
-newtype Compiler a = Compiler { 
-    runCompiler :: ErrorT String (DiagT (ReaderT (Options, [String]) IO)) a
+newtype CompilerT m a = CompilerT { 
+    runCompiler :: ErrorT String (DiagT (ReaderT (Options, [String]) m)) a
 }
 
-instance Functor Compiler where
-    fmap f = Compiler . fmap f . runCompiler
+instance (Functor m) => Functor (CompilerT m) where
+    fmap f = CompilerT . fmap f . runCompiler
 
-instance Monad Compiler where
-    return = Compiler . return
-    m >>= f = Compiler $ runCompiler m >>= (runCompiler . f)
+instance (Monad m) => Monad (CompilerT m) where
+    return = CompilerT . return
+    m >>= f = CompilerT $ runCompiler m >>= (runCompiler . f)
 
-instance MonadDiag Compiler where
-    emit = Compiler . lift . emit
+instance (Monad m) => MonadDiag (CompilerT m) where
+    emit = CompilerT . lift . emit
     
-instance MonadIO Compiler where
-    liftIO = Compiler . liftIO 
+instance (MonadIO m) => MonadIO (CompilerT m) where
+    liftIO = CompilerT . liftIO 
 
-liftReader :: ReaderT (Options, [String]) IO a -> Compiler a
-liftReader = Compiler . lift . lift
+liftReader :: (Monad m) => ReaderT (Options, [String]) m a -> CompilerT m a
+liftReader = CompilerT . lift . lift
 
-getOpt :: (Options -> a) -> Compiler a
+getOpt :: (Monad m) => (Options -> a) -> CompilerT m a
 getOpt f = liftReader $ asks (f . fst)
 
-getNonopts :: Compiler [String]
+getNonopts :: (Monad m) => CompilerT m [String]
 getNonopts = liftReader $ asks snd
 
-config :: Compiler Options
+config :: (Monad m) => CompilerT m Options
 config = liftReader $ asks fst
 
     
-runC :: Options -> [String] -> Compiler a -> IO (Either String a, Seq Message)
+runC :: Options -> [String] -> CompilerT m a -> m (Either String a, Seq Message)
 runC opts args c =
     let err = runCompiler c
         wr  = runErrorT err
@@ -59,6 +59,6 @@ runC opts args c =
     in runReaderT rd (opts, args)
     
   
-throwC :: String -> Compiler a
-throwC = Compiler . throwError
+throwC :: (Monad m) => String -> CompilerT m a
+throwC = CompilerT . throwError
 

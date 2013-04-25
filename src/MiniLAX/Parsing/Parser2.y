@@ -1,5 +1,5 @@
 {
-module MiniLAX.Parsing.Parser2 where
+module MiniLAX.Parsing.Parser2 (parse) where
 
 import MiniLAX.Parsing.LexerCore
 import MiniLAX.Parsing.ParserCore
@@ -15,7 +15,7 @@ import MiniLAX.Diagnostic
 %name doParse
 %tokentype { Token }
 %error { parseError }
-%monad { Compiler }
+%monad { (Monad m) => CompilerT m }
 
 %left NOT_P
 %left '*'
@@ -158,10 +158,8 @@ LoopStat :: { Stmt Location }
   
 {
 
-parse :: [Token] -> Compiler (Program Location)
+parse :: [Token] -> CompilerT m (Program Location)
 parse = doParse
-
-
 
 }
 

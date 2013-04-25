@@ -6,7 +6,7 @@ import MiniLAX.Compiler
 import MiniLAX.Parsing.LexerCore
 
 
-parseError :: [Token] -> Compiler a
+parseError :: (Monad m) => [Token] -> CompilerT m a
 parseError tokens = 
     throwC $ pos ++ ": parse error" ++ tok
     where (pos, tok) = case tokens of
