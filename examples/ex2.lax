@@ -1,0 +1,18 @@
+PROGRAM ex1;
+
+DECLARE
+  PROCEDURE F(n : INTEGER);
+  DECLARE
+    k: INTEGER;
+    d : INTEGER
+  BEGIN
+    fib[1] := 1;
+    fib[2] := 1;
+    WHILE k < n DO
+      fib[k+2] := fib[k + 1] + fib[k]
+    END
+  END
+BEGIN
+  F(3)
+END.
+

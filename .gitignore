@@ -1,3 +1,4 @@
 *.hi
 *.o
 /.dist-buildwrapper
+/jasmin.jar

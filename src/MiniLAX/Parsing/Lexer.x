@@ -22,12 +22,12 @@ $digit  = 0-9
 @id             = $letter ($letter | $digit)*
 @int_const      = $digit $digit*
 @scale_factor   = "E" ("+" | "-") ? @int_const
-@real_const     = (@int_const ?) "." @int_const 
+@real_const     = (@int_const ?) "." @int_const (@scale_factor ?)
 
 tokens :-
 
   $white+                          ;
-  "(*" (. | \n)* "*)"              ;
+  "(*"([^\*]|\*[^\)]|\n)*"*)"              ;
   @int_const                       { mkT (Int . read) }
   @real_const                      { mkT (Float . readFloat) }
   [\:\;\=\+\-\*\/\(\)\.\,\[\]\<]   { mkT Sym }

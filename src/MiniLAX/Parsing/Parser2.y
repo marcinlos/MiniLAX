@@ -15,7 +15,7 @@ import MiniLAX.Diagnostic
 %name doParse
 %tokentype { Token }
 %error { parseError }
-%monad { (Monad m) => CompilerT m }
+%monad { CompilerT IO }
 
 %left NOT_P
 %left '*'
@@ -75,8 +75,11 @@ Block :: { Block Location }
     "BEGIN" StatSeq "END"                   { Block (tkPos $1) $2 $4 }
   
 DeclSeq :: { [Decl Location] }
+  : DeclSeqR                                { reverse $1 }
+  
+DeclSeqR :: { [Decl Location] }
   : Decl                                    { [$1] }
-  | DeclSeq ';' Decl                        { $3 : $1 }
+  | DeclSeqR ';' Decl                       { $3 : $1 }
   
 Decl :: { Decl Location }
   : VarDecl                                 { $1 }
@@ -87,8 +90,11 @@ ProcHead :: { ProcHead Location }
   | "PROCEDURE" Id '(' FormalSeq ')'        { ProcHead (tkPos $1) (mkName $2) $4 }
   
 FormalSeq :: { [Formal Location] }
+  : FormalSeqR                              { reverse $1 }
+  
+FormalSeqR :: { [Formal Location] }
   : Formal                                  { [$1] }
-  | FormalSeq ';' Formal                    { $3 : $1 }
+  | FormalSeqR ';' Formal                   { $3 : $1 }
   
 Formal :: { Formal Location }
   : "VAR" Id ':' Type                       { Formal (tkPos $1) ByVar (mkName $2) $4 }
@@ -128,8 +134,11 @@ Expr :: { Expr Location }
   | "}:->"                                  { mkLitExpr $1 }
   
 StatSeq :: { [Stmt Location] }
+  : StatSeqR                                { reverse $1 }
+  
+StatSeqR :: { [Stmt Location] }
   : Stat                                    { [$1] }
-  | StatSeq ';' Stat                        { $3 : $1 }
+  | StatSeqR ';' Stat                       { $3 : $1 }
   
 Stat :: { Stmt Location }
   : AssignStat                              { $1 }
@@ -144,9 +153,13 @@ ProcStat :: { Stmt Location }
   : Id                                      { ProcCall (tkPos $1) (mkName $1) [] }
   | Id '(' ExprSeq ')'                      { ProcCall (tkPos $1) (mkName $1) $3 }
   
+  
 ExprSeq :: { [Expr Location] }
+  : ExprSeqR                                { reverse $1 }
+  
+ExprSeqR :: { [Expr Location] }
   : Expr                                    { [$1] }
-  | ExprSeq ',' Expr                        { $3 : $1 }
+  | ExprSeqR ',' Expr                       { $3 : $1 }
   
 CondStat :: { Stmt Location }
   : "IF" Expr "THEN" StatSeq 
@@ -158,7 +171,7 @@ LoopStat :: { Stmt Location }
   
 {
 
-parse :: [Token] -> CompilerT m (Program Location)
+parse :: [Token] -> CompilerT IO (Program Location)
 parse = doParse
 
 }

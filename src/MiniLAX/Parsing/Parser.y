@@ -8,6 +8,10 @@ import MiniLAX.Compiler
 import MiniLAX.AST as AST
 
 import MiniLAX.Diagnostic
+
+import Control.Monad.Identity
+type Compiler = CompilerT Identity
+
 }
 
 %name doParse

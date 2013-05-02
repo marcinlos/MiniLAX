@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances #-}
 -- | Module containing definitions and actions for command line options
 module MiniLAX.Options where
 
@@ -5,6 +6,9 @@ module MiniLAX.Options where
 import System.Exit
 import System.Console.GetOpt
 import System.IO
+
+import Control.Monad
+import Control.Monad.Trans.Reader
 
 import qualified Data.ByteString.Lazy as BS
 
@@ -45,6 +49,23 @@ defaultOptions = Options {
     optDumpSymbolTable         = False,
     optDumpJasmin              = False
 }
+
+
+-- | Class of configuration-providing monad
+class(Monad m) => MonadConf m where
+    config :: m Options
+    nonopts :: m [String]
+
+    getOption :: (Options -> a) ->  m a
+    getOption f = f `liftM` config
+    
+
+-- | Monad transformer providing configuration
+type ConfT = ReaderT (Options, [String])
+
+instance (Monad m) => MonadConf (ConfT m) where
+    config = asks fst
+    nonopts = asks snd
 
 
 -- | Function building options structure and undertaking necessary actions

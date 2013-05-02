@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 -- | Entry point of an application
 module Main (
     main, 
@@ -5,7 +6,7 @@ module Main (
 ) where
 
 -- |
-import Prelude hiding (catch, mapM)
+import Prelude hiding (mapM)
 import System.Environment
 import System.IO
 import System.Exit
@@ -34,9 +35,13 @@ import MiniLAX.Static.Symbols
 
 import MiniLAX.Backend.JVM.Skeleton ()
 
+type Compiler3 m a = (Monad m) => CompilerT m a
+
 
 main :: IO ()
 main = run `catch` errorHandler
+
+type Compiler = CompilerT IO
 
 run :: IO ()
 run = do
@@ -66,7 +71,7 @@ errorHandler e = do
 greeting :: Compiler ()
 greeting = do
     verbosity <- optVerbosity <$> config
-    args      <- getNonopts
+    args      <- nonopts
     liftIO $ when (verbosity > 3) $ do
         putStrLn "Verbose mode ON"
         putStrLn "Input file(s): "
@@ -79,14 +84,14 @@ tokenize s = either throwC return (scanTokens s)
     
 maybeDumpTokens :: [Token] -> Compiler ()
 maybeDumpTokens tokens = do
-    shouldDump <- getOpt optDumpTokens
+    shouldDump <- getOption optDumpTokens
     when shouldDump $
         liftIO $ mapM_ print tokens
         
 
 maybeDumpAST :: Program Location -> Compiler ()
 maybeDumpAST ast = do
-    shouldDump <- getOpt optDumpAst
+    shouldDump <- getOption optDumpAst
     when shouldDump $ do
         -- flat <- getOpt optDumpAstFlat
         let s = show {- if flat then show 
@@ -96,7 +101,7 @@ maybeDumpAST ast = do
         
 maybeDumpSymbols :: Procedure -> Compiler ()
 maybeDumpSymbols syms = do
-    shouldDump <- getOpt optDumpSymbolTable
+    shouldDump <- getOption optDumpSymbolTable
     when shouldDump $
         let s = printProc "" syms
         in liftIO $ putStrLn $ getString s

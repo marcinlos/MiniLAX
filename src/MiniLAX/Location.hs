@@ -21,7 +21,7 @@ locationUnknown :: Location
 locationUnknown = Location {
     getFile = "?",
     getLine = 0,
-    getCol = 0
+    getCol = 0 
 }
 
 -- | Typeclass of a being having location

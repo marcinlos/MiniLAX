@@ -27,7 +27,11 @@ executable mlax
                    MiniLAX.Compiler,
                    MiniLAX.Parsing.LexerCore,
                    MiniLAX.Parsing.ParserCore,
-                   MiniLAX.AST.Util
+                   MiniLAX.AST.Util,
+                   MiniLAX.IR,
+                   MiniLAX.Backend.JVM.CodeGen,
+                   MiniLAX.Static.Closures,
+                   MiniLAX.Static.Resolver
 
 test-suite Test
   type:            exitcode-stdio-1.0
@@ -48,13 +52,16 @@ test-suite Test
                   MiniLAX.Printer,
                   MiniLAX.Backend.JVM.Skeleton,
                   MiniLAX.Diagnostic,
-                  MiniLAX.TreeDecoration,
                   MiniLAX.Static.Symbols,
                   MiniLAX.Static.Types,
                   MiniLAX.Compiler,
                   MiniLAX.Parsing.LexerCore,
                   MiniLAX.Parsing.ParserCore,
-                  MiniLAX.AST.Util
+                  MiniLAX.AST.Util,
+                  MiniLAX.IR,
+                  MiniLAX.Backend.JVM.CodeGen,
+                  MiniLAX.Static.Closures,
+                  MiniLAX.Static.Resolver
   hs-source-dirs:  
                   tests,
                   src
