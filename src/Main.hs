@@ -32,10 +32,9 @@ import MiniLAX.AST.Annotated
 import MiniLAX.Parsing.Parser2
 
 import MiniLAX.Static.Symbols
+import MiniLAX.Static
 
 import MiniLAX.Backend.JVM.Skeleton ()
-
-type Compiler3 m a = (Monad m) => CompilerT m a
 
 
 main :: IO ()
@@ -55,6 +54,8 @@ run = do
         maybeDumpAST ast
         sym <- collectSymbols ast
         maybeDumpSymbols sym
+        sym' <- analyze sym
+        return ()
     void $ Trav.forM diag print
     case res of 
         Right _ -> return ()
@@ -83,16 +84,14 @@ tokenize s = either throwC return (scanTokens s)
     
     
 maybeDumpTokens :: [Token] -> Compiler ()
-maybeDumpTokens tokens = do
-    shouldDump <- getOption optDumpTokens
-    when shouldDump $
+maybeDumpTokens tokens =
+    ifEnabled optDumpTokens $
         liftIO $ mapM_ print tokens
         
 
 maybeDumpAST :: Program Location -> Compiler ()
-maybeDumpAST ast = do
-    shouldDump <- getOption optDumpAst
-    when shouldDump $ do
+maybeDumpAST ast =
+    ifEnabled optDumpAst $ do
         -- flat <- getOpt optDumpAstFlat
         let s = show {- if flat then show 
                         else getString . prettyPrint -} 
@@ -100,9 +99,8 @@ maybeDumpAST ast = do
         
         
 maybeDumpSymbols :: Procedure -> Compiler ()
-maybeDumpSymbols syms = do
-    shouldDump <- getOption optDumpSymbolTable
-    when shouldDump $
+maybeDumpSymbols syms =
+    ifEnabled optDumpSymbolTable $ do
         let s = printProc "" syms
-        in liftIO $ putStrLn $ getString s
+        liftIO $ putStrLn $ getString s
     

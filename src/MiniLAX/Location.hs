@@ -4,7 +4,7 @@
 module MiniLAX.Location (
     Location (..),
     HasLocation (..),
-    locationUnknown
+    empty
 ) where
 
 -- | Name clash 
@@ -17,11 +17,11 @@ data Location = Location {
     getCol  :: Int
 }
 
-locationUnknown :: Location
-locationUnknown = Location {
+empty :: Location
+empty = Location {
     getFile = "?",
-    getLine = 0,
-    getCol = 0 
+    getLine = -1,
+    getCol = -1 
 }
 
 -- | Typeclass of a being having location

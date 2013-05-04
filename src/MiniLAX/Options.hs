@@ -33,6 +33,8 @@ data Options = Options {
     optDumpAst                 :: Bool,
     optDumpAstFlat             :: Bool,
     optDumpSymbolTable         :: Bool,
+    optDumpFreeVars            :: Bool,
+    optDumpLambdaLifted        :: Bool,
     optDumpJasmin              :: Bool
 }
 
@@ -47,6 +49,8 @@ defaultOptions = Options {
     optDumpAst                 = False,
     optDumpAstFlat             = False,
     optDumpSymbolTable         = False,
+    optDumpFreeVars            = False,
+    optDumpLambdaLifted        = False,
     optDumpJasmin              = False
 }
 
@@ -66,6 +70,11 @@ type ConfT = ReaderT (Options, [String])
 instance (Monad m) => MonadConf (ConfT m) where
     config = asks fst
     nonopts = asks snd
+    
+ifEnabled :: (Functor m, MonadConf m) => (Options -> Bool) -> m a -> m ()
+ifEnabled opt action = do
+    value <- getOption opt
+    when value $ void action
 
 
 -- | Function building options structure and undertaking necessary actions
@@ -130,11 +139,19 @@ options = [
             "MODE")
         "Prints original form of AST of the input and terminates",
         
-    Option "j" ["dump-symbols"]
+    Option [] ["dump-symbols"]
         (NoArg $ \opts -> return opts { optDumpSymbolTable = True })
         "Outputs symbol table generated from the original source",
+       
+    Option [] ["dump-free-vars"]
+        (NoArg $ \opts -> return opts { optDumpFreeVars = True })
+        "Outputs free variables for each procedure code",
         
-    Option "j" ["dump-jasmin"]
+    Option [] ["dump-lifted"]
+        (NoArg $ \opts -> return opts { optDumpLambdaLifted = True })
+        "Outputs lambda-lifted code",
+        
+    Option [] ["dump-jasmin"]
         (NoArg $ \opts -> return opts { optDumpJasmin = True })
         "Outputs jasmin assembly generated from the input",
 

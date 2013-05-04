@@ -31,7 +31,9 @@ executable mlax
                    MiniLAX.IR,
                    MiniLAX.Backend.JVM.CodeGen,
                    MiniLAX.Static.Closures,
-                   MiniLAX.Static.Resolver
+                   MiniLAX.Static.Resolver,
+                   MiniLAX.Static,
+                   MiniLAX.Static.Env
 
 test-suite Test
   type:            exitcode-stdio-1.0
@@ -60,8 +62,10 @@ test-suite Test
                   MiniLAX.AST.Util,
                   MiniLAX.IR,
                   MiniLAX.Backend.JVM.CodeGen,
-                  MiniLAX.Static.Closures,
-                  MiniLAX.Static.Resolver
+                  MiniLAX.Static.Resolver,
+                  MiniLAX.Static.ClosuresTest,
+                  MiniLAX.Static,
+                  MiniLAX.Static.Env
   hs-source-dirs:  
                   tests,
                   src

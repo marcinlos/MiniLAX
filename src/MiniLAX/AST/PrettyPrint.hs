@@ -5,74 +5,97 @@ module MiniLAX.AST.PrettyPrint (
 ) where
 
 -- |
-import MiniLAX.AST
+import Control.Applicative ((<$>))
+import Data.List
+import MiniLAX.AST.Annotated
 import MiniLAX.Printer
 
 
-pretty :: Program -> String
+pretty :: Program a -> String
 pretty = const "?" --getString . out
 
 
 class Pretty a where
     out :: a -> PrinterMonad ()
 
-{-
-instance Pretty Program where
-    out (Program name body) = do
-        put "PROGRAM " %% name %% ";" >> endl >> endl
+
+instance Pretty (Name a) where
+    out (Name _ name) = append name
+
+
+instance Pretty (Program a) where
+    out (Program _ name body) = do
+        put "PROGRAM " >> out name %% ";" >> endl >> endl
         out body %% "."
         
-instance Pretty Block where
-    out (Block decls stats) = do
+instance Pretty (Block a) where
+    out (Block _ decls stats) = do
         put "DECLARE" >> endl
         indented $ mapM_ out $ reverse decls
         put "BEGIN" >> endl
         indented $ mapM_ out $ reverse stats
         put "END"
         
-instance Pretty Decl where
-    out (VarDecl name tp) = 
-        put name >> out tp >> endl
-        
-    out (ProcDecl head body) = do
+instance Pretty (Decl a) where
+    out (VarDecl _ name tp) = 
+        out name >> out tp >> endl
+
+    out (ProcDecl _ head body) =
         out head >> endl
         
-instance Pretty ProcHead where
-    out (ProcHead name params) = do
-        put name %% "(" >> params >> ");" >> endl
-        where params = put "(params)"
+instance Pretty (ProcHead a) where
+    out (ProcHead _ name params) = do
+        ind >> out name %% "(" >> params' %% ");" >> endl
+        where params' = put "(params)"
     
-instance Pretty Stat where
-    out (AssignStat left right) = 
-        out left %% " := " >> out right >> endl
+instance Pretty (Stmt a) where
+    out (Assignment _ left right) = 
+        ind >> out left %% " := " >> out right >> endl
         
-    out (ProcStat name args) = do
-        put name >> if null args then put ""
-                                 else put " "
-        endl
-        --put "Call "; bracketed $ do
-        --    put "Name: '" %% name %% "'" >> endl
-        --    put "Args " >> bracketed (mapM_ prettyPrint $ reverse args)
+    out (ProcCall _ name args) = do
+        ind >> out name %% "("
+        let args' =  out <$> args
+        sequence_ (intersperse (append ", ") args')
+        append ")" >> endl
         
-    out (CondStat cond true false) = do
+    out (IfThenElse _ cond true false) = do
         put "IF " >> out cond %% " THEN" >> endl
-        indented $ mapM_ out $ reverse true
+        indented $ mapM_ out  true
         put "ELSE" >> endl
-        indented $ mapM_ out $ reverse false
+        indented $ mapM_ out false
         put "END" >> endl
             
-    out (LoopStat cond body) = do
+    out (While _ cond body) = do
         put "WHILE " >> out cond %% " DO" >> endl
-        indented $ mapM_ out $ reverse body
+        indented $ mapM_ out body
         put "END" >> endl
         
-instance Pretty Expr where
-    out _ = put "(expr)"
+instance Pretty (Expr a) where
+    out (BinaryExpr _ op left right) = out left >> out op >> out right
+    out (UnaryExpr _ op e) = out op >> out e
+    out (LitExpr _ lit) = out lit
+    out (VarExpr _ var) = out var
     
-instance Pretty Var where
-    out _ = put "(var)"
+instance Pretty (Variable a) where
+    out (VarName _ name) = out name
+    out (VarIndex _ name expr) = out name %% "[" >> out expr %% "]"
     
-instance Pretty Type where
-    out _ = put "(type)"
--}
+instance Pretty (BinOp a) where
+    out (Plus _) = append "+"
+    out (Times _) = append "-"
+    out (Less _) = append "<"
+    
+instance Pretty (UnOp a) where
+    out (Not _) = append "NOT"
+    
+instance Pretty (Literal a) where
+    out (LitInt _ n) = append $ show n
+    out (LitReal _ x) = append $ show x
+    out (LitMichal _) = append "<michal>"
+    out (LitTrue _) = append "TRUE"
+    out (LitFalse _) = append "FALSE"
+    
+instance Pretty (Type a) where
+    out _ = append "(type)"
+
 

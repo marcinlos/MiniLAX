@@ -2,6 +2,10 @@
 module MiniLAX.Static.Symbols where
 
 -- |
+
+import qualified Data.Map as M
+import Data.Traversable
+import Control.Monad hiding (forM)
 -- import MiniLAX.Static.Types
 -- import qualified MiniLAX.AST as AST 
 import qualified MiniLAX.AST.Annotated as AST
@@ -9,12 +13,8 @@ import MiniLAX.AST.Util
 import MiniLAX.Location 
 import MiniLAX.Printer
 import MiniLAX.Compiler
-
 import MiniLAX.Static.Types
-
-import qualified Data.Map as M
-import Data.Traversable
-import Control.Monad hiding (forM)
+import MiniLAX.AST.PrettyPrint
 
 
 type SMap = M.Map String
@@ -57,6 +57,7 @@ data Procedure = Procedure {
     procNested   :: SMap Procedure,
     procBody     :: [AST.Stmt Location]
 } deriving (Show)
+
 
 
 collectSymbols :: (Monad m) => AST.Program Location -> CompilerT m Procedure
@@ -130,20 +131,20 @@ printType other = append (show other)
 
 printVars :: SMap Local -> PrinterMonad ()
 printVars m = do 
-    put "Vars "; bracketed $ 
+    put "Vars " >> endl; indented $ 
         forM m $ \(Local name pos tp) ->
             put name %% ": " >> printType tp >> append " " %% show pos >> endl
         
 printParams :: [Parameter] -> PrinterMonad ()
 printParams m = do
-    put "Params "; bracketed $
+    put "Params " >> endl; indented $
         forM m $ \(Parameter name pos tp kind) -> do
             put name %% ": " >> printType tp >> append " (" %% show kind %% ")" 
             append "   " %% show pos >> endl
 
 printStms :: [AST.Stmt Location] -> PrinterMonad ()
 printStms m = do 
-    put "Vars "; bracketed $ 
+    put "Vars " >> endl; indented $ 
         forM m $ \stm->
             put (show  $ AST.attr stm) %% show stm >> endl
             
@@ -158,10 +159,12 @@ printProc path Procedure {
     procBody   = body
 } = do
     let path' = path ++ "/" ++ name 
-    put "Proc " %% path' %% " " %% show pos %% "  "; bracketed $ do
+    put "Proc " %% path' %% " " %% show pos %% "  " >> endl 
+    indented $ do
         printParams params
         printVars vars
-        printStms body
+        --printStms body
+        mapM_ out body
     void $ forM nested (printProc path')
 
 
