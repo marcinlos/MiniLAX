@@ -3,8 +3,8 @@ module MiniLAX.Static (
     analyze
 ) where
 
--- |
-import Control.Monad
+-- Imports
+import qualified Data.Map as M
 import Control.Monad.IO.Class
 
 import MiniLAX.Compiler
@@ -13,26 +13,23 @@ import MiniLAX.Printer
 import MiniLAX.Static.Symbols
 import MiniLAX.Static.Closures
 
-import MiniLAX.AST.PrettyPrint
+type Prog = (ProcMap, String)
 
-analyze :: (Functor m, MonadIO m) => Procedure -> CompilerT m Procedure
+analyze :: (Functor m, MonadIO m) => Procedure -> CompilerT m Prog
 analyze p = do
     maybeDumpFreeVars p
-    (lifted, free) <- lambdaLift p
-    maybeDumpLifted lifted
-    return lifted
+    prog <- lambdaLift p
+    maybeDumpLifted prog
+    return prog
     
     
-maybeDumpLifted :: (Functor m, MonadIO m) => Procedure -> CompilerT m ()
-maybeDumpLifted p =
-    ifEnabled optDumpLambdaLifted $ do
-        let s = printProc "" p
-        liftIO $ putStrLn $ getString s
+maybeDumpLifted :: (Functor m, MonadIO m) => Prog -> CompilerT m ()
+maybeDumpLifted (m, _) =
+    ifEnabled optDumpLambdaLifted $ mapM_ dumpProc $ M.elems m
+    where dumpProc = liftIO . putStrLn . getString . printProc ""
         
 maybeDumpFreeVars :: (Functor m, MonadIO m) => Procedure -> CompilerT m ()
 maybeDumpFreeVars p =
     ifEnabled optDumpFreeVars $
         liftIO $ putStrLn $ getString $ printFreeRec p
-        
-
 

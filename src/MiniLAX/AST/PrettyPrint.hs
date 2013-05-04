@@ -23,6 +23,7 @@ instance Pretty (Name a) where
     out (Name _ name) = append name
 
 
+{-   Maybe later     
 instance Pretty (Program a) where
     out (Program _ name body) = do
         put "PROGRAM " >> out name %% ";" >> endl >> endl
@@ -35,7 +36,6 @@ instance Pretty (Block a) where
         put "BEGIN" >> endl
         indented $ mapM_ out $ reverse stats
         put "END"
-        
 instance Pretty (Decl a) where
     out (VarDecl _ name tp) = 
         out name >> out tp >> endl
@@ -47,6 +47,7 @@ instance Pretty (ProcHead a) where
     out (ProcHead _ name params) = do
         ind >> out name %% "(" >> params' %% ");" >> endl
         where params' = put "(params)"
+-}  
     
 instance Pretty (Stmt a) where
     out (Assignment _ left right) = 
@@ -71,8 +72,9 @@ instance Pretty (Stmt a) where
         put "END" >> endl
         
 instance Pretty (Expr a) where
-    out (BinaryExpr _ op left right) = out left >> out op >> out right
-    out (UnaryExpr _ op e) = out op >> out e
+    out (BinaryExpr _ op left right) = 
+        out left %% " " >> out op %% " " >> out right
+    out (UnaryExpr _ op e) = out op %% " " >> out e
     out (LitExpr _ lit) = out lit
     out (VarExpr _ var) = out var
     

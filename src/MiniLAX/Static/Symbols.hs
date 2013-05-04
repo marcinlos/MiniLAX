@@ -1,13 +1,11 @@
 -- | Symbol table building
 module MiniLAX.Static.Symbols where
 
--- |
-
+-- Imports
 import qualified Data.Map as M
 import Data.Traversable
 import Control.Monad hiding (forM)
--- import MiniLAX.Static.Types
--- import qualified MiniLAX.AST as AST 
+
 import qualified MiniLAX.AST.Annotated as AST
 import MiniLAX.AST.Util
 import MiniLAX.Location 
@@ -142,7 +140,7 @@ printParams m = do
             put name %% ": " >> printType tp >> append " (" %% show kind %% ")" 
             append "   " %% show pos >> endl
 
-printStms :: [AST.Stmt Location] -> PrinterMonad ()
+printStms :: (Show a) => [AST.Stmt a] -> PrinterMonad ()
 printStms m = do 
     put "Vars " >> endl; indented $ 
         forM m $ \stm->
@@ -158,13 +156,14 @@ printProc path Procedure {
     procNested = nested,
     procBody   = body
 } = do
-    let path' = path ++ "/" ++ name 
+    let path' = path ++ (if null path then [] else "::") ++ name 
     put "Proc " %% path' %% " " %% show pos %% "  " >> endl 
     indented $ do
         printParams params
         printVars vars
-        --printStms body
+        put (replicate 50 '-') >> endl
         mapM_ out body
+        endl
     void $ forM nested (printProc path')
 
 

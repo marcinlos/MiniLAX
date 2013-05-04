@@ -145,7 +145,9 @@ options = [
        
     Option [] ["dump-free-vars"]
         (NoArg $ \opts -> return opts { optDumpFreeVars = True })
-        "Outputs free variables for each procedure code",
+        ("Outputs free variables for each procedure code (first iteration, " ++
+            "does not include variables introduced by lifting sibling " ++
+            "procedures)"),
         
     Option [] ["dump-lifted"]
         (NoArg $ \opts -> return opts { optDumpLambdaLifted = True })

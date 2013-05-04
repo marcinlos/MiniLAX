@@ -9,7 +9,8 @@ module MiniLAX.Static.Env (
     push,
     batchPush,
     pushLayer,
-    pop
+    pop,
+    path
 ) where
 
 -- Imports
@@ -69,6 +70,9 @@ pushLayer s m = batchPush m . push s
 
 pop :: Env a -> Env a
 pop = apply init
+
+path :: Env a -> [String]
+path = reverse . (fst <$>) . getEnv
 
  
 
