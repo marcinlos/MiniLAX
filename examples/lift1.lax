@@ -1,0 +1,28 @@
+PROGRAM lift1;
+
+DECLARE
+  PROCEDURE A(n : INTEGER);
+  DECLARE
+    k: INTEGER;
+    (*------------------*)
+    PROCEDURE B;
+    DECLARE
+      z: INTEGER
+    BEGIN
+      WRITE(k)
+    END;
+    (*------------------*)
+    PROCEDURE C;
+    DECLARE
+      y: INTEGER
+    BEGIN
+      B
+    END
+  BEGIN
+    B
+  END
+BEGIN
+  A(3)
+END.
+    
+      

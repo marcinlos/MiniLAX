@@ -7,6 +7,8 @@ module MiniLAX.Static.Env (
     lookup,
     lookupWithPath,
     push,
+    batchPush,
+    pushLayer,
     pop
 ) where
 
@@ -46,17 +48,24 @@ root :: String -> Env a
 root s = Env { getEnv = [(s, M.empty)] }
 
 insert :: String -> a -> Env a -> Env a
-insert s v Env { getEnv = e : es } = Env { getEnv = insertAux s v e : es }
-insert _ _ _ = error "empty environment"
+insert s v (Env (e : es)) = Env (insertAux s v e : es)
+insert _ _ _ = error "Env.insert: empty environment"
 
 lookup :: String -> Env a -> Maybe a
-lookup s Env { getEnv = e } = fst <$> lookupChain s e
+lookup s (Env e) = fst <$> lookupChain s e
 
 lookupWithPath :: String -> Env a -> Maybe (a, [Label])
-lookupWithPath s Env { getEnv = e } = lookupChain s e
+lookupWithPath s (Env e) = lookupChain s e
 
 push :: String -> Env a -> Env a
 push s = apply ((s, M.empty) :)
+
+batchPush :: SMap a -> Env a -> Env a
+batchPush m (Env ((l, vs) : es)) = Env ((l, m `M.union` vs) : es)  
+batchPush _ _ = error "Env.batchPush: empty environment"
+
+pushLayer :: String -> SMap a -> Env a -> Env a
+pushLayer s m = batchPush m . push s
 
 pop :: Env a -> Env a
 pop = apply init

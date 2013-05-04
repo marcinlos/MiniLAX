@@ -5,14 +5,16 @@
 module MiniLAX.Static.Closures where
 
 -- Imports
-import Prelude hiding (mapM_)
+import Prelude hiding (mapM_, any)
 import Data.Monoid
 import qualified Data.Map as M
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.List
+import Data.List hiding (any)
 import Data.Foldable
 import Data.Maybe
+
+import Debug.Trace
 
 import Control.Applicative ((<$>))
 import Control.Monad.IO.Class
@@ -114,6 +116,8 @@ computeFreeVariables p = used `without` declared
     where used     = usedVarsProc p
           declared = declaredInProc p
           
+type ProcMap = SMap Procedure
+          
 type Patch = SMap [String]
    
 liftLambdas :: Env T.Type -> Procedure -> (Procedure, Vars)
@@ -127,32 +131,50 @@ liftLambdas env p @ Procedure { procName     = name
           patchRec = M.insert name (varsToList free) patch
           free     = used `without` declaredInProc p 
           used     = usedVarsProc p `mappend` vars
-          (nested', patch, vars) = liftChildren env nested
+          (nested', patch, vars) = liftChildren env' nested
+          env' = E.pushLayer name (makeTypeMap p) env
           
           
-liftChildren :: Env T.Type -> SMap Procedure -> (SMap Procedure, Patch, Vars)
+liftChildren :: Env T.Type -> ProcMap -> (ProcMap, Patch, Vars)
 liftChildren env ps = (ps', patch, fold vars)
-    where ps'  = fst <$> res
-          vars = snd <$> res
-          res  = liftLambdas env <$> ps
-          patch = M.keys . getVars <$> vars
+    where (ps', _) = patchChildren env patch $ fst <$> res
+          vars     = snd <$> res
+          res      = liftLambdas env <$> ps
+          patch    = M.keys . getVars <$> vars
           
+patchChildren :: Env T.Type -> Patch -> ProcMap -> (ProcMap, Patch)
+patchChildren env patch procs = 
+    if any (not . null) patch' 
+        then patchChildren env patch' procs'
+        else (procs', patch')
+    where procs'  = fst <$> res
+          vars    = snd <$> res
+          res     = liftLambdas env <$> (patchProc patch <$> procs)
+          patch'   = M.keys . getVars <$> vars
           
 addParameters :: Env T.Type -> Vars -> Procedure -> Procedure
 addParameters env (Vars vars) p @ Procedure { procParams = params
-                                            , procParamMap = paramMap } =
+                                            , procParamMap = paramMap 
+                                            } =
     p { procParams = params', procParamMap = paramMap' }
-    where params'  = params ++ M.elems vars'
-          paramMap' = paramMap `M.union` vars'
-          vars'    = M.mapWithKey mkParam vars
-          mkParam s _ = Parameter { 
-              paramName = s,
-              paramPos  = L.empty,
-              paramKind = ByVar, 
-              paramType = typeOf s
-          }
-          -- TODO Find out why this causes exception
-          typeOf s = {- fromJust -} fromMaybe IntegerT $ E.lookup s env
+    where params'     = params ++ M.elems vars'
+          paramMap'   = paramMap `M.union` vars'
+          vars'       = M.mapWithKey mkParam vars
+          mkParam s _ = Parameter { paramName = s
+                                  , paramPos  = L.empty
+                                  , paramKind = ByVar
+                                  , paramType = typeOf s
+                                  }
+          typeOf s = fromJust $ E.lookup s env
+
+
+makeTypeMap :: Procedure -> SMap T.Type
+makeTypeMap Procedure { procParamMap = params
+                      , procVars = locals 
+                      } = 
+    params' `M.union` locals'
+    where params' = varType <$> params
+          locals' = varType <$> locals
 
   
 mkName :: String -> Name Location
@@ -162,7 +184,15 @@ mkVarExpr :: String -> Expr Location
 mkVarExpr = VarExpr L.empty . VarName L.empty . mkName
 
 
-patchStmt :: SMap [String] -> Stmt Location -> Stmt Location
+patchProc :: Patch -> Procedure -> Procedure
+patchProc patch p @ Procedure { procBody = body
+                              , procNested = nested 
+                              } = 
+    p { procBody   = patchStmt patch <$> body
+      , procNested = patchProc patch <$> nested }
+
+
+patchStmt :: Patch -> Stmt Location -> Stmt Location
 patchStmt patch c @ (ProcCall a n @ (Name _ s) args) = 
     case M.lookup s patch of
         Just vars -> ProcCall a n vars' 
