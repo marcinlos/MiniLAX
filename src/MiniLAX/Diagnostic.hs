@@ -32,7 +32,7 @@ data Message = Message {
 --   For example, print failures red?
 instance Show Message where
     show (Message tp loc text) = 
-        typeInfo ++ locInfo ++ text
+        typeInfo ++ locInfo ++ " " ++ text
         where typeInfo = "[" ++ show tp ++ "] "
               locInfo = fromMaybe "" (show <$> loc) 
               

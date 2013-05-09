@@ -3,7 +3,16 @@
 -- of variables from outside the procedure scope - that is, to turn closure
 -- variables into actual function parameters. This process is known as 
 -- lambda-lifting.
-module MiniLAX.Static.Closures where
+module MiniLAX.Static.Closures (
+    lambdaLift,
+    printFreeRec,
+    usedVars,
+    usedVarsStmt,
+    isIndexed,
+    Vars (..),
+    Usage (..),
+    ProcMap
+) where
 
 -- Imports
 import Prelude hiding (mapM_, any)
@@ -43,12 +52,15 @@ instance Monoid Usage where
 -- | Datatype representing variable usage
 newtype Vars = Vars { getVars :: SMap Usage }
 
+{-
 empty :: Vars 
 empty = Vars M.empty
+-}
 
 varsToList :: Vars -> [String]
 varsToList = M.keys . getVars
 
+{-
 insertRead, insertWrite :: String -> Vars -> Vars
 insertRead = flip insertVar Read
 insertWrite = flip insertVar Write
@@ -56,7 +68,8 @@ insertWrite = flip insertVar Write
 insertVar :: String -> Usage -> Vars -> Vars
 insertVar name usage (Vars vars) = Vars vars'
     where vars' = M.insertWith mappend name usage vars
-    
+-}
+  
 instance Monoid Vars where
     mempty = Vars M.empty
     (Vars u) `mappend` (Vars v) = Vars vars
@@ -82,6 +95,7 @@ usedVars (LitExpr _ _) = mempty
 usedVars (BinaryExpr _ _ x y) = vx `mappend` vy
     where vx = usedVars x
           vy = usedVars y
+usedVars (CastExpr _ _ e) = usedVars e
           
 -- | Determines variables used inside a block of statements
 usedVarsBlock :: [Stmt a] -> Vars

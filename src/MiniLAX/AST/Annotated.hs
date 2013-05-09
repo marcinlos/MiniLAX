@@ -155,12 +155,14 @@ data Expr l =
   | UnaryExpr l (UnOp l) (Expr l)
   | LitExpr l (Literal l)
   | VarExpr l (Variable l)
+  | CastExpr l (Type l) (Expr l)
     
 instance Annotated (Expr l) l where
     attr (BinaryExpr l _ _ _) = l
     attr (UnaryExpr l _ _) = l
     attr (LitExpr l _) = l
     attr (VarExpr l _) = l
+    attr (CastExpr l _ _) = l
     
 instance Functor Expr where
     fmap f (BinaryExpr l op el er) = 
@@ -169,6 +171,7 @@ instance Functor Expr where
     fmap f (UnaryExpr l op e) = UnaryExpr (f l) (f `fmap` op) (f `fmap` e)
     fmap f (LitExpr l val) = LitExpr (f l) (f `fmap` val)
     fmap f (VarExpr l var) = VarExpr (f l) (f `fmap` var)
+    fmap f (CastExpr l t e) = CastExpr (f l) (f `fmap` t) (f `fmap` e)
      
 
 deriving instance (Show l) => Show (Expr l) 

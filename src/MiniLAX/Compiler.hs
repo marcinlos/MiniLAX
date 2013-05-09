@@ -22,6 +22,7 @@ newtype CompilerT m a = CompilerT {
     runCompiler :: ErrorT String (DiagT (ConfT m)) a
 }
 
+
 instance (Functor m) => Functor (CompilerT m) where
     fmap f = CompilerT . fmap f . runCompiler
 

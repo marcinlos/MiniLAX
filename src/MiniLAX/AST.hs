@@ -26,14 +26,6 @@ import MiniLAX.Static.Types
 import MiniLAX.Printer
 
 
--- | Enumeration of binary operators
-data BinOp = Plus | Times | Less
-    deriving (Eq, Show)
-
--- | Enumeration of unary operators
-data UnOp = Not
-    deriving (Eq, Show)
-
 -- | Whole program - name and ordinary block, ending with a dot
 data Program = Program {
     progName :: String,

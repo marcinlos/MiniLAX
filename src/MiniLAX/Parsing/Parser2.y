@@ -17,6 +17,7 @@ import MiniLAX.Diagnostic
 %error { parseError }
 %monad { CompilerT IO }
 
+
 %left NOT_P
 %left '*'
 %left '+'
@@ -79,6 +80,7 @@ DeclSeq :: { [Decl Location] }
   
 DeclSeqR :: { [Decl Location] }
   : Decl                                    { [$1] }
+  | DeclSeqR ';' error                          {% errDeclSemi $2 $1 } 
   | DeclSeqR ';' Decl                       { $3 : $1 }
   
 Decl :: { Decl Location }
@@ -138,6 +140,7 @@ StatSeq :: { [Stmt Location] }
   
 StatSeqR :: { [Stmt Location] }
   : Stat                                    { [$1] }
+  | StatSeqR ';' error                      {% errStmtSemi $2 $1 }  
   | StatSeqR ';' Stat                       { $3 : $1 }
   
 Stat :: { Stmt Location }
@@ -169,7 +172,7 @@ LoopStat :: { Stmt Location }
   : "WHILE" Expr "DO" StatSeq "END"         { While (tkPos $1) $2 $4 }
   
   
-{
+{ 
 
 parse :: [Token] -> CompilerT IO (Program Location)
 parse = doParse

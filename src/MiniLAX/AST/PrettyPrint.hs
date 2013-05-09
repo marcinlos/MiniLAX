@@ -7,8 +7,9 @@ module MiniLAX.AST.PrettyPrint (
 -- |
 import Control.Applicative ((<$>))
 import Data.List
-import MiniLAX.AST.Annotated
+import MiniLAX.AST.Annotated 
 import MiniLAX.Printer
+import qualified MiniLAX.Static.Types as T
 
 
 pretty :: Program a -> String
@@ -17,6 +18,12 @@ pretty = const "?" --getString . out
 
 class Pretty a where
     out :: a -> PrinterMonad ()
+
+instance Pretty T.Type where
+    out (T.ArrayT tp low high) = do
+        append "ARRAY [" %% show low %% ".." %% show high %% "] OF "
+        out tp
+    out other = prettyPrint other
 
 
 instance Pretty (Name a) where
@@ -77,6 +84,7 @@ instance Pretty (Expr a) where
     out (UnaryExpr _ op e) = out op %% " " >> out e
     out (LitExpr _ lit) = out lit
     out (VarExpr _ var) = out var
+    out (CastExpr _ t e) = put "(" >> out t %% ": " >> out e %% ") "
     
 instance Pretty (Variable a) where
     out (VarName _ name) = out name

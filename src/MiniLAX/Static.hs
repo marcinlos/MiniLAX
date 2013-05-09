@@ -11,12 +11,15 @@ import MiniLAX.Compiler
 import MiniLAX.Options
 import MiniLAX.Printer
 import MiniLAX.Static.Symbols
+import MiniLAX.Static.TypeCheck
 import MiniLAX.Static.Closures
+
 
 type Prog = (ProcMap, String)
 
 analyze :: (Functor m, MonadIO m) => Procedure -> CompilerT m Prog
 analyze p = do
+    typecheck emptyTypeEnv p
     maybeDumpFreeVars p
     prog <- lambdaLift p
     maybeDumpLifted prog

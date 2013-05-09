@@ -1,0 +1,9 @@
+PROGRAM ex1;
+
+DECLARE
+  fib : ARRAY [1..10] OF INTEGER;
+BEGIN
+  F(3);
+END.
+
+
