@@ -13,7 +13,8 @@ executable mlax
                    array,
                    containers,
                    mtl,
-                   transformers
+                   transformers,
+                   HList
   ghc-options:     -Wall
   other-modules:   
                    MiniLAX.AST,
@@ -38,7 +39,9 @@ executable mlax
                    MiniLAX.Static.Resolver,
                    MiniLAX.Static.Symbols,
                    MiniLAX.Static.TypeCheck,
-                   MiniLAX.Static.Types
+                   MiniLAX.Static.Types,
+                   MiniLAX.AST.Expr,
+                   MiniLAX.Util.LabelGen
 
 test-suite Test
   type:            exitcode-stdio-1.0
@@ -76,7 +79,9 @@ test-suite Test
                   MiniLAX.Static.Resolver,
                   MiniLAX.Static.Symbols,
                   MiniLAX.Static.TypeCheck,
-                  MiniLAX.Static.Types
+                  MiniLAX.Static.Types,
+                  MiniLAX.AST.Expr,
+                  MiniLAX.Util.LabelGen
   hs-source-dirs:  
                   tests,
                   src
