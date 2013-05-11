@@ -7,12 +7,14 @@ import Control.Monad.Trans.Error
 import Control.Monad.Trans.State
 
 import MiniLAX.Diagnostic
+import MiniLAX.IR
+import MiniLAX.Printer
 
 type ErrMsg = String
 
 -- | Code generation monad
 newtype CodeGen a = CodeGen { 
-    runCodeGen :: ErrorT ErrMsg (DiagT (State CodeGenState)) a
+    runCodeGen :: DiagT (State CodeGenState) a
 }
 
 -- | State maintained during generating the code

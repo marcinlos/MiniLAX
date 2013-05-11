@@ -28,6 +28,9 @@ empty = Location {
 class HasLocation a where
     getLocation :: a -> Location
     
+instance HasLocation Location where
+    getLocation = id
+    
 -- | Pretty-prints location information 
 instance Show Location where
     show (Location _ line col) = show (line, col)

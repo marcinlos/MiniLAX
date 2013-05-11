@@ -5,8 +5,12 @@ module MiniLAX.Static.Types (
     BinOp (..),
     UnOp (..),
     Coercion (..),
-    checkBin
+    checkBin,
+    MayHaveType (..)
 ) where
+
+--
+import Data.Maybe
 
 -- | Pretty-printing instances
 import MiniLAX.Printer
@@ -30,6 +34,14 @@ data BinOp = Plus | Times | Less deriving (Eq, Show)
 
 -- | Enumeration of unary operators
 data UnOp = Not deriving (Eq, Show)  
+
+
+class MayHaveType a where
+    getType :: a -> Maybe Type
+    justGetType :: a -> Type
+    justGetType = fromJust . getType
+    
+instance MayHaveType Type where getType = Just
 
 
 data Coercion = None | Int2Real | Real2Int 

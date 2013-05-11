@@ -21,6 +21,7 @@ import MiniLAX.Static.Types (ParamKind)
 class Annotated a l | a -> l where
     attr :: a -> l
     
+    
 -- | Class of an entity with a name, such as a program, variable etc.
 class HasName a where
     getName :: a -> String 
