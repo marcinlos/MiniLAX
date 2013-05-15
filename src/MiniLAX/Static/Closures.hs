@@ -33,13 +33,11 @@ import MiniLAX.AST.Annotated as AST
 import MiniLAX.Static.Symbols as S
 import MiniLAX.Static.Types as T
 
-import MiniLAX.Location (Location)
-import qualified MiniLAX.Location as L
 import MiniLAX.Printer
 import MiniLAX.Compiler
 import MiniLAX.Static.Env (Env)
 import qualified MiniLAX.Static.Env as E
-
+import MiniLAX.Util.AttrMap
 
 data Usage = Read | Write deriving (Eq, Enum, Show)
 
@@ -154,7 +152,7 @@ liftLambdas env p @ Procedure { procName     = name
                               } = 
     (addParameters env free p', free)
     where p'       = p { procNested = nested', procBody = body' }
-          body'    = patchStmt patchRec  <$> body
+          body'    = patchStmt patchRec <$> body
           patchRec = M.insert name (varsToList free) patch
           free     = used `without` declaredInProc p 
           used     = usedVarsProc p `mappend` vars
@@ -189,10 +187,10 @@ addParameters env (Vars vars) p @ Procedure { procParams = params
     where params'     = params ++ M.elems vars'
           paramMap'   = paramMap `M.union` vars'
           vars'       = M.mapWithKey mkParam vars
-          mkParam s _ = Parameter { paramName = s
-                                  , paramPos  = L.empty
-                                  , paramKind = ByVar
-                                  , paramType = typeOf s
+          mkParam s _ = Parameter { paramName  = s
+                                  , paramProps = emptyAttr
+                                  , paramKind  = ByVar
+                                  , paramType  = typeOf s
                                   }
           typeOf s = fromJust $ E.lookup s env
 
@@ -206,11 +204,11 @@ makeTypeMap Procedure { procParamMap = params
           locals' = varType <$> locals
 
   
-mkName :: String -> Name Location
-mkName = Name L.empty
+mkName :: String -> Name Properties
+mkName = Name emptyAttr
   
-mkVarExpr :: String -> Expr Location
-mkVarExpr = VarExpr L.empty . VarName L.empty . mkName
+mkVarExpr :: String -> Expr Properties
+mkVarExpr = VarExpr emptyAttr . VarName emptyAttr . mkName
 
 
 -- | Patches a procedure body and bodies of nested procedures. It does not
@@ -225,7 +223,7 @@ patchProc patch p @ Procedure { procBody = body
 
 
 -- | Given a patch, applies it to a single statement, recursively if necessary.
-patchStmt :: Patch -> Stmt Location -> Stmt Location
+patchStmt :: Patch -> Stmt Properties -> Stmt Properties
 patchStmt patch c @ (ProcCall a n @ (Name _ s) args) = 
     case M.lookup s patch of
         Just vars -> ProcCall a n vars' 

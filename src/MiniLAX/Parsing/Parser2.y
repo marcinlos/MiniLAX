@@ -8,7 +8,7 @@ import MiniLAX.Compiler
 import MiniLAX.AST.Annotated
 import MiniLAX.AST.Util
 import MiniLAX.Static.Types (ParamKind (..))
-
+import MiniLAX.Util.AttrMap
 import MiniLAX.Diagnostic
 }
 
@@ -174,8 +174,10 @@ LoopStat :: { Stmt Location }
   
 { 
 
-parse :: [Token] -> CompilerT IO (Program Location)
-parse = doParse
+parse :: [Token] -> CompilerT IO (Program Properties)
+parse ts = do
+    ast <- doParse ts
+    return $ fmap (singleton "pos") ast
 
 }
 

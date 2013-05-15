@@ -89,7 +89,7 @@ maybeDumpTokens tokens =
         liftIO $ mapM_ print tokens
         
 
-maybeDumpAST :: Program Location -> Compiler ()
+maybeDumpAST :: (Show a) => Program a -> Compiler ()
 maybeDumpAST ast =
     ifEnabled optDumpAst $ do
         -- flat <- getOpt optDumpAstFlat

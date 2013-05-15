@@ -20,6 +20,9 @@ import MiniLAX.Static.Types (ParamKind)
 -- | Class of a annotated entity
 class Annotated a l | a -> l where
     attr :: a -> l
+    modifyAttr :: (l -> l) -> a -> a
+    setAttr :: l -> a -> a
+    setAttr = modifyAttr . const
     
     
 -- | Class of an entity with a name, such as a program, variable etc.
@@ -35,6 +38,7 @@ data Name l = Name l String
 
 instance Annotated (Name l) l where 
     attr (Name l _) = l 
+    modifyAttr f (Name l a) = Name (f l) a
 
 instance Functor Name where
     fmap f (Name l s) = Name (f l) s 
@@ -52,6 +56,7 @@ data Program l = Program l (Name l) (Block l)
 
 instance Annotated (Program l) l where
     attr (Program l _ _) = l
+    modifyAttr f (Program l n b) = Program (f l) n b
     
 instance Functor Program where
     fmap f (Program l name block) = 
@@ -72,6 +77,7 @@ data Block l = Block l [Decl l] [Stmt l]
 
 instance Annotated (Block l) l where
     attr (Block l _ _) = l
+    modifyAttr f (Block l d s) = Block (f l) d s
     
 instance Functor Block where
     fmap f (Block l decls stms) = 
@@ -97,6 +103,9 @@ data Decl l =
 instance Annotated (Decl l) l where 
     attr (VarDecl l _ _) = l
     attr (ProcDecl l _ _) = l
+    modifyAttr f (VarDecl l n t) = VarDecl (f l) n t
+    modifyAttr f (ProcDecl l h b) = ProcDecl (f l) h b
+    
     
 instance Functor Decl where
     fmap f (VarDecl l name tp) = VarDecl (f l) (f <$> name) (f <$> tp) 
@@ -121,6 +130,7 @@ data ProcHead l = ProcHead l (Name l) [Formal l]
 
 instance Annotated (ProcHead l) l where
     attr (ProcHead l _ _) = l
+    modifyAttr f (ProcHead l n a) = ProcHead (f l) n a
     
 instance Functor ProcHead where
     fmap f (ProcHead l name formals) = 
@@ -145,6 +155,7 @@ data Formal l = Formal l ParamKind (Name l) (Type l)
 
 instance Annotated (Formal l) l where
     attr (Formal l _ _ _) = l
+    modifyAttr f (Formal l k n t) = Formal (f l) k n t
     
 instance Functor Formal where
     fmap f (Formal l k name tp) = Formal (f l) k (f <$> name) (f <$> tp)
@@ -172,6 +183,10 @@ instance Annotated (Stmt l) l where
     attr (ProcCall l _ _) = l
     attr (IfThenElse l _ _ _) = l
     attr (While l _ _) = l
+    modifyAttr f (Assignment l v e) = Assignment (f l) v e
+    modifyAttr f (ProcCall l n e) = ProcCall (f l) n e
+    modifyAttr f (IfThenElse l e ifT ifF) = IfThenElse (f l) e ifT ifF
+    modifyAttr f (While l e s) = While (f l) e s
     
 instance Functor Stmt where
     fmap f (Assignment l x y) = Assignment (f l) (f <$> x) (f <$> y) 
@@ -219,6 +234,7 @@ instance Annotated (BinOp l) l where
     attr (Plus l) = l
     attr (Times l) = l
     attr (Less l) = l
+    modifyAttr = fmap
     
 instance Functor BinOp where
     fmap f (Plus l)  = Plus (f l)
@@ -240,6 +256,7 @@ data UnOp l = Not l
 
 instance Annotated (UnOp l) l where
     attr (Not l) = l
+    modifyAttr = fmap
     
 instance Functor UnOp where
     fmap f (Not l) = Not (f l)
@@ -266,6 +283,11 @@ instance Annotated (Expr l) l where
     attr (LitExpr l _) = l
     attr (VarExpr l _) = l
     attr (CastExpr l _ _) = l
+    modifyAttr f (BinaryExpr l op el er) = BinaryExpr (f l) op el er
+    modifyAttr f (UnaryExpr l op e) = UnaryExpr (f l) op e
+    modifyAttr f (LitExpr l e) = LitExpr (f l) e
+    modifyAttr f (VarExpr l v) = VarExpr (f l) v
+    modifyAttr f (CastExpr l t e) = CastExpr (f l) t e
     
 instance Functor Expr where
     fmap f (BinaryExpr l op el er) = 
@@ -310,6 +332,8 @@ data Variable l =
 instance Annotated (Variable l) l where
     attr (VarName l _) = l
     attr (VarIndex l _ _) = l
+    modifyAttr f (VarName l n) = VarName (f l) n
+    modifyAttr f (VarIndex l b i) = VarIndex (f l) b i
     
 instance Functor Variable where
     fmap f (VarName l name) = VarName (f l) (f <$> name)
@@ -339,6 +363,10 @@ instance Annotated (Type l) l where
     attr (TyReal l) = l
     attr (TyBoolean l) = l
     attr (TyArray l _ _ _) = l
+    modifyAttr f (TyInt l) = TyInt (f l)
+    modifyAttr f (TyReal l) = TyReal (f l)
+    modifyAttr f (TyBoolean l) = TyBoolean (f l)
+    modifyAttr f (TyArray l t low high) = TyArray (f l) t low high
     
 instance Functor Type where
     fmap f (TyInt l) = TyInt (f l)
@@ -379,6 +407,7 @@ instance Annotated (Literal l) l where
     attr (LitMichal l) = l
     attr (LitTrue l)   = l
     attr (LitFalse l)  = l 
+    modifyAttr = fmap
     
 instance Functor Literal where
     fmap f (LitInt l n)  = LitInt (f l) n

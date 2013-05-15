@@ -5,6 +5,7 @@ module MiniLAX.Static (
 
 -- Imports
 import qualified Data.Map as M
+import Control.Monad (void)
 import Control.Monad.IO.Class
 
 import MiniLAX.Compiler
@@ -19,7 +20,8 @@ type Prog = (ProcMap, String)
 
 analyze :: (Functor m, MonadIO m) => Procedure -> CompilerT m Prog
 analyze p = do
-    typecheck emptyTypeEnv p
+    void $ typecheck emptyTypeEnv p
+    throwIfFlag "*** Errors during typechecking, aborting"
     maybeDumpFreeVars p
     prog <- lambdaLift p
     maybeDumpLifted prog

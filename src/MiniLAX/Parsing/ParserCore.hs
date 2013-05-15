@@ -1,12 +1,15 @@
 -- | Auxilary parsing functions
 module MiniLAX.Parsing.ParserCore where
 
+--
+import Data.Traversable
 -- | Monad it lives in
 import MiniLAX.Compiler
 import MiniLAX.AST.Annotated
 import MiniLAX.Location
 import MiniLAX.Diagnostic
 import MiniLAX.Parsing.LexerCore
+import MiniLAX.Util.AttrMap
 
 
 parseError :: (Monad m) => [Token] -> CompilerT m a
@@ -31,3 +34,5 @@ errDeclSemi = withErr' "Semicolon after last declaration"
 errStmtSemi :: (Monad m) => ErrPrinter m [Stmt Location]
 errStmtSemi = withErr' "Semicolon after last statement"
 
+toProps :: Program Location -> Program Properties
+toProps = fmap (singleton "pos")

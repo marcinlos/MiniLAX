@@ -10,59 +10,63 @@ import qualified MiniLAX.AST.Annotated as AST
 import MiniLAX.AST.Util
 import MiniLAX.Location 
 import MiniLAX.Printer
-import MiniLAX.Compiler
 import MiniLAX.Static.Types
 import MiniLAX.AST.PrettyPrint
+import MiniLAX.Util.AttrMap
 
 
 type SMap = M.Map String
 type ScopeId = [String]
 
-data Local = Local {
-    localName  :: String,
-    localPos   :: Location,
-    localType  :: Type
-} deriving (Show)
+data Local = Local { localName  :: String
+                   , localProps :: Properties
+                   , localType  :: Type
+                   } 
+    deriving (Show)
 
 
-data Parameter = Parameter {
-    paramName :: String,
-    paramPos  :: Location,
-    paramType :: Type,
-    paramKind :: ParamKind
-} deriving (Show)
+data Parameter = Parameter { paramName  :: String
+                           , paramProps :: Properties
+                           , paramType  :: Type
+                           , paramKind  :: ParamKind
+                           } 
+    deriving (Show)
 
 
 class Variable a where
-    varName :: a -> String
-    varType :: a -> Type
+    varName  :: a -> String
+    varType  :: a -> Type
+    varProps :: a -> Properties
     
 instance Variable Local where
-    varName = localName
-    varType = localType
+    varName  = localName
+    varType  = localType
+    varProps = localProps 
     
 instance Variable Parameter where
-    varName = paramName
-    varType = paramType
+    varName  = paramName
+    varType  = paramType
+    varProps = paramProps
+
+getPos :: Properties -> Location
+getPos = getAttr "pos"
+
+data Procedure = Procedure { procName     :: String
+                           , procProps    :: Properties
+                           , procParams   :: [Parameter]
+                           , procParamMap :: SMap Parameter
+                           , procVars     :: SMap Local
+                           , procNested   :: SMap Procedure
+                           , procBody     :: [AST.Stmt Properties]
+                           } 
+    deriving (Show)
 
 
-data Procedure = Procedure {
-    procName     :: String,
-    procPos      :: Location,
-    procParams   :: [Parameter],
-    procParamMap :: SMap Parameter,
-    procVars     :: SMap Local,
-    procNested   :: SMap Procedure,
-    procBody     :: [AST.Stmt Location]
-} deriving (Show)
-
-
-
-collectSymbols :: (Monad m) => AST.Program Location -> CompilerT m Procedure
-collectSymbols (AST.Program pos (AST.Name _ name) body) = do
+collectSymbols :: (Monad m) => AST.Program Properties -> m Procedure
+collectSymbols (AST.Program props (AST.Name _ name) body) = do
     (vars, nested) <- fromBlock body
     return Procedure { procName     = name
-                     , procPos      = pos
+                     , procProps    = props
                      , procParams   = []
                      , procParamMap = M.empty
                      , procVars     = vars
@@ -73,25 +77,23 @@ collectSymbols (AST.Program pos (AST.Name _ name) body) = do
           
 type SymTable = (SMap Local, SMap Procedure)
           
-fromBlock :: (Monad m) => AST.Block Location -> CompilerT m SymTable
+fromBlock :: (Monad m) => AST.Block Properties -> m SymTable
 fromBlock (AST.Block  _ decls _) =
     foldlM processDecl (M.empty, M.empty) decls
 
-processDecl :: (Monad m) => SymTable 
-                         -> AST.Decl Location 
-                         -> CompilerT m SymTable
+processDecl :: (Monad m) => SymTable -> AST.Decl Properties -> m SymTable
 processDecl sym @ (vs, ps) decl = case decl of
     AST.VarDecl pos (AST.Name _ vname) vtype -> return (vs', ps)
         where vs' = M.insert vname var vs
               var = Local vname pos (ast2Type vtype)
               
-    AST.ProcDecl pos hd block -> do
+    AST.ProcDecl props hd block -> do
         (vars, procs) <- fromBlock block
         (pms, pmap)   <- getParams hd
         let name      = AST.getName hd
             AST.Block _ _ stms = block
             proc = Procedure { procName     = name
-                             , procPos      = pos
+                             , procProps    = props
                              , procParams   = pms
                              , procParamMap = pmap
                              , procVars     = vars
@@ -100,11 +102,11 @@ processDecl sym @ (vs, ps) decl = case decl of
                              }
         insertProc proc sym
         
-insertProc :: (Monad m) => Procedure -> SymTable -> CompilerT m SymTable
+insertProc :: (Monad m) => Procedure -> SymTable -> m SymTable
 insertProc proc (vs, ps) = return (vs, M.insert (procName proc) proc ps) 
 
-getParams :: (Monad m) => AST.ProcHead Location 
-                       -> CompilerT m ([Parameter], SMap Parameter)
+getParams :: (Monad m) => 
+    AST.ProcHead Properties -> m ([Parameter], SMap Parameter)
 getParams (AST.ProcHead _ _ params) = 
     return (list, mp)
     where list = fmap formalToParam params
@@ -112,29 +114,33 @@ getParams (AST.ProcHead _ _ params) =
           putParam m p = M.insert (paramName p) p m
     
     
-formalToParam :: AST.Formal Location -> Parameter
-formalToParam (AST.Formal pos kind name tp) = 
-    Parameter { paramName = AST.getName name
-              , paramPos  = pos
-              , paramType = ast2Type tp
-              , paramKind = kind
+formalToParam :: AST.Formal Properties -> Parameter
+formalToParam (AST.Formal props kind name tp) = 
+    Parameter { paramName  = AST.getName name
+              , paramProps = props
+              , paramType  = ast2Type tp
+              , paramKind  = kind
               }
 
 
 -- | Pretty-printing of gathered information
 
+showPos :: Properties -> String
+showPos props = maybe "(-)" show (tryAttr "pos" props :: Maybe Location)
+   
+
 printVars :: SMap Local -> PrinterMonad ()
 printVars m = do 
     put "Vars " >> endl; indented $ 
-        forM_ m $ \(Local name pos tp) ->
-            put name %% ": " >> out tp >> append " " %% show pos >> endl
+        forM_ m $ \(Local name props tp) ->
+            put name %% ": " >> out tp >> append " " %% showPos props >> endl 
         
 printParams :: [Parameter] -> PrinterMonad ()
 printParams m = do
     put "Params " >> endl; indented $
-        forM_ m $ \(Parameter name pos tp kind) -> do
+        forM_ m $ \(Parameter name props tp kind) -> do
             put name %% ": " >> out tp >> append " (" %% show kind %% ")" 
-            append "   " %% show pos >> endl
+            append "   " %% showPos props >> endl
 
 printStms :: (Show a) => [AST.Stmt a] -> PrinterMonad ()
 printStms m = do 
@@ -145,14 +151,14 @@ printStms m = do
 
 printProc :: String -> Procedure -> PrinterMonad ()
 printProc path Procedure { procName   = name
-                         , procPos    = pos
+                         , procProps  = props
                          , procParams = params
                          , procVars   = vars
                          , procNested = nested
                          , procBody   = body
                          } = do
     let path' = path ++ (if null path then [] else "::") ++ name 
-    put "Proc " %% path' %% " " %% show pos %% "  " >> endl 
+    put "Proc " %% path' %% " " %% showPos props %% "  " >> endl 
     indented $ do
         printParams params
         printVars vars

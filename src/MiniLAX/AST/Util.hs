@@ -1,17 +1,12 @@
 module MiniLAX.AST.Util where
 
--- |
+--
+import Data.Typeable
+
 import MiniLAX.Parsing.LexerCore
 import MiniLAX.AST.Annotated
 import MiniLAX.Location
-import Data.IntMap (IntMap)
-import qualified Data.IntMap as M
-
-import Data.Foldable
-import Data.Monoid ((<>))
-import Control.Applicative
-import Data.Traversable
-import Control.Monad.Trans.State
+import MiniLAX.Util.AttrMap
 
 import qualified MiniLAX.Static.Types as T
 
@@ -55,8 +50,4 @@ ast2Type (TyArray _ t low high) = T.ArrayT t' low' high'
     where t'    = ast2Type t 
           low'  = lit2Int low 
           high' = lit2Int high
-
-
-
-
 

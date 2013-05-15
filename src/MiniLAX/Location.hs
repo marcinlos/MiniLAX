@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 -- | Module containing definitions of structures and functions providing an
 --   easy way to carry and display information about position in the source
 --   code.
@@ -9,13 +10,14 @@ module MiniLAX.Location (
 
 -- | Name clash 
 import Prelude hiding (getLine)
+import Data.Typeable
 
 -- | Position information for source code constructs
-data Location = Location { 
-    getFile :: String,
-    getLine :: Int,
-    getCol  :: Int
-}
+data Location = Location { getFile :: String
+                         , getLine :: Int
+                         , getCol  :: Int
+                         }
+    deriving (Eq, Typeable) 
 
 empty :: Location
 empty = Location {

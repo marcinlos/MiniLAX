@@ -1,9 +1,11 @@
 -- | Definitions of intermediate representation elements
 module MiniLAX.IR where
 
--- | Label
-newtype Label = Label Int
+-- 
+import MiniLAX.Printer
 
+-- | Label
+newtype Label = Label Int deriving (Eq, Show)
 
 data IR = LoadInt String
         | LoadReal String
@@ -45,7 +47,18 @@ data IR = LoadInt String
         | WrapArgInt String
         | WrapArgReal String
         | WrapArgBool String
+        | PutLabel Label
         | Return
+        deriving (Eq, Show)
+
+
+instance Printable Label where
+    prettyPrint (Label n) = append $ "L" ++ show n 
+
+        
+instance Printable IR where
+    prettyPrint (PutLabel lab) = prettyPrint lab %% ":" >> endl
+    prettyPrint i = (put $ show i) >> endl
 
 
 

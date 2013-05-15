@@ -9,19 +9,23 @@ import MiniLAX.IR as IR
 import MiniLAX.Static.Symbols
 import MiniLAX.AST.Annotated as AST
 import MiniLAX.Static.Types as T
+import MiniLAX.Printer
 
 import Data.List
 
-data GenState = GenState { }
+data GenState = GenState { genStateNextLabel :: Int }
 
 initState :: GenState
-initState = GenState { }
+initState = GenState { genStateNextLabel = 1 }
 
 data CodePart = CodePart { codeInstr :: [IR] }
  
 instance Monoid CodePart where
     mempty = CodePart []
     a `mappend` b = CodePart $ codeInstr a ++ codeInstr b 
+
+instance Printable CodePart where
+    prettyPrint = mapM_ prettyPrint . codeInstr
 
 
 
