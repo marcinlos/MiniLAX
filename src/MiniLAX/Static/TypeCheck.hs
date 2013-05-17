@@ -12,7 +12,6 @@ import Control.Applicative ((<$>))
 import qualified Data.Map as M
 import Data.Traversable
 
-import MiniLAX.Location
 import MiniLAX.Static.Types hiding (getType)
 import MiniLAX.AST.Annotated hiding (Type, Program)
 import qualified MiniLAX.AST.Annotated as AST
@@ -80,6 +79,84 @@ ensureIndex env e = do
                         msg = "Cannot use " ++ tstr ++ " as an array index"
                     emitError pos msg
                     doFail_ e'  
+                    
+type VarP = AST.Variable Properties
+                    
+ensureAssignable :: (Functor m, MonadDiag m, MonadFlag m) => 
+    TypeEnv -> VarP -> m (VarP, Type)
+ensureAssignable env v = do
+    (v', t) <- computeType env v
+    if isArray t then do let pos = Just $ attr v .#. "pos"
+                             msg = "Cannot assign to array type"
+                         emitError pos msg
+                         doFail v
+                 else withType t v'
+                 
+ensureConvertibleTo :: (Functor m, MonadDiag m, MonadFlag m) =>
+    TypeEnv -> Type -> ExprP -> m (ExprP, Type)
+ensureConvertibleTo env t e = do
+    (e', t') <- computeType env e
+    case coercion t t' of
+        Just c -> return (coerce c e', t)
+        Nothing -> do let pos = Just $ attr e .#. "pos"
+                          msg = "Cannot convert " ++ src ++ " to " ++ target 
+                          src = getString $ out t'
+                          target = getString $ out t
+                      emitError pos msg
+                      doFail e
+                      
+ensureUsableAsVar :: (Functor m, MonadDiag m, MonadFlag m) =>
+    TypeEnv -> Type -> ExprP -> m (ExprP, Type)
+ensureUsableAsVar env t e = do
+    res @ (_, t') <- computeType env e
+    case coercion t t' of
+        Just None 
+            | isVar e   -> return res
+            | otherwise -> do 
+                let pos = Just $ attr e .#. "pos"
+                    msg = "Cannot use expression as a VAR argument, it " ++
+                          "isn't L-value"
+                emitError pos msg
+                doFail e
+        Just c -> do 
+            let pos = Just $ attr e .#. "pos"
+                msg = "Cannot use expression as a VAR argument - " ++
+                      "actual type " ++ srcStr ++ " does not match " ++
+                      "required VAR type " ++ paramStr ++ " exactly, " ++
+                      "coercion " ++ show c ++ " needed"
+                srcStr = getString $ out t' 
+                paramStr = getString $ out t  
+            emitError pos msg
+            doFail e
+        Nothing -> do 
+            let pos = Just $ attr e .#. "pos"
+                msg = "Cannot use expression as a VAR argument - " ++
+                      "actual type " ++ srcStr ++ " does not match " ++
+                      "required VAR type " ++ paramStr
+                srcStr = getString $ out t' 
+                paramStr = getString $ out t  
+            emitError pos msg
+            doFail e
+    where isVar VarExpr {} = True
+          isVar _          = False
+    
+    
+checkProcCall :: (Functor m, MonadDiag m, MonadFlag m) =>
+    TypeEnv -> Procedure -> [ExprP] -> m [ExprP]
+checkProcCall env Procedure { procParams = params } es = 
+    mapM check $ zip params es
+    where check = uncurry $ checkArg env
+
+
+checkArg :: (Functor m, MonadDiag m, MonadFlag m) => 
+    TypeEnv -> Parameter -> ExprP -> m ExprP
+checkArg env param e =
+    let t  = paramType param
+        check = case paramKind param of
+                    ByVal -> ensureConvertibleTo
+                    ByVar -> ensureUsableAsVar
+    in fst <$> check env t e
+            
 
 withType :: (Monad m, Annotated a Properties) => Type -> a -> m (a, Type)
 withType t a = return (setType t a, t) 
@@ -134,17 +211,15 @@ instance Typecheckable Procedure where
               
 instance Typecheckable (Stmt Properties) where
     typecheck env (Assignment l v e) = do
-        (v', vt) <- computeType env v
-        (e', et) <- computeType env e
-        -- TODO: check assignability 
+        (v', vt) <- ensureAssignable env v
+        (e', _) <- ensureConvertibleTo env vt e
         return $ Assignment l v' e'
     
-    typecheck env @ (vars, procs) c @ (ProcCall a n args) =
+    typecheck env @ (_, procs) c @ (ProcCall a n args) =
         case E.lookup name procs of
             Just proc -> do
-                argst' <- mapM (computeType env) args
-                -- TODO: check count and types
-                return c
+                args' <- checkProcCall env proc args
+                return $ ProcCall a n args'
             Nothing -> do
                 emitError loc $ "Unknown procedure: `" ++ name ++ "'"
                 doFail_ c
@@ -179,14 +254,24 @@ instance Typed (Expr Properties) where
         (e', _) <- ensureBoolean env e "As a NOT argument"
         withType BooleanT $ UnaryExpr props op e'
         
-    computeType env (BinaryExpr props op l r) = do
+    computeType env expr @ (BinaryExpr props op l r) = do
         (l', lt) <- computeType env l
         (r', rt) <- computeType env r
         let (t, cl, cr) = checkBin op lt rt
             l'' = coerce cl l'
             r'' = coerce cr r'
             e   = BinaryExpr props op l'' r''
-        withType t e
+        case t of
+            TypeError -> do 
+                let pos = Just $ attr expr .#. "pos"
+                    msg = "Cannot apply binary operation '" ++ opStr ++ "'" ++ 
+                          " to arguments of types " ++ lStr ++ " and " ++ rStr
+                    lStr  = getString $ out lt
+                    rStr  = getString $ out rt 
+                    opStr = getString $ out op
+                emitError pos msg
+                doFail expr 
+            _ -> withType t e
         where checkBin (Less _) = cmp
               checkBin _        = arit
     
@@ -196,7 +281,6 @@ instance Typed (AST.Variable Properties) where
         case E.lookup name vars of
             Just t -> withType t var
             Nothing -> do emitError loc msg
-                          setError
                           doFail var
                           where msg = "Unresolved variable: `" ++ name ++ "'"
         where name = getName n
@@ -208,7 +292,6 @@ instance Typed (AST.Variable Properties) where
         case bt of 
             ArrayT t _ _ -> withType t $ VarIndex props b' i'
             _ -> do emitError loc $ "Cannot index non-array type " ++ tstr
-                    setError
                     doFail var
                     where tstr = getString $ out bt
                           loc  = Just $ props .#. "pos" 
