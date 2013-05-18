@@ -92,7 +92,7 @@ instance Pretty (Variable a) where
     
 instance Pretty (BinOp a) where
     out (Plus _) = append "+"
-    out (Times _) = append "-"
+    out (Times _) = append "*"
     out (Less _) = append "<"
     
 instance Pretty (UnOp a) where

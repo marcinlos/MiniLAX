@@ -3,6 +3,7 @@ module MiniLAX.IR where
 
 -- 
 import MiniLAX.Printer
+import MiniLAX.Static.Types
 
 -- | Label
 newtype Label = Label Int deriving (Eq, Show)
@@ -48,52 +49,26 @@ data IR = LoadInt String
         | WrapArgReal String
         | WrapArgBool String
         | PutLabel Label
-        | Return
+        | Ret
         deriving (Eq, Show)
 
 
 instance Printable Label where
-    prettyPrint (Label n) = append $ "L" ++ show n 
+    prettyPrint (Label n) = append $ 'L' : show n 
 
         
 instance Printable IR where
     prettyPrint (PutLabel lab) = prettyPrint lab %% ":" >> endl
     prettyPrint i = (put $ show i) >> endl
+    
+fetchArrayByType :: Type -> IR
+fetchArrayByType IntegerT = FetchArrayInt
+fetchArrayByType RealT    = FetchArrayReal
+fetchArrayByType BooleanT = FetchArrayBool
+fetchArrayByType ArrayT {} = FetchArrayArray
 
+storeArrayByType :: Type -> IR
+storeArrayByType IntegerT = StoreArrayInt
+storeArrayByType RealT    = StoreArrayReal
+storeArrayByType BooleanT = StoreArrayBool
 
-
-{-
--- | Address
-data Addr = Local Int   -- ^ Local variable 
-          | Tmp Int     -- ^ Value on the stack
-          | CInt Int    -- ^ Integer constant
-          | CReal Float -- ^ Real constant
--} 
-   
-{-       
-data IR = 
-    AddI 
-  | AddF
-  | MulI
-  | MulF
-  | LoadI Addr
-  | LoadF Addr
-  | LoadB Addr
-  | ALoadI Addr
-  | ALoadF Addr
-  | ALoadB Addr
-  | ALoadA Addr
-  | StoreI Addr
-  | StoreF Addr
-  | StoreB Addr
-  | AStoreI Addr
-  | AStoreF Addr
-  | AStoreB Addr
-  | AStoreA Addr
-  | IfLess Label
-  | Int2Float
-  | Float2Int
-  | Call String
-  | Ret (Maybe Addr)
-  | PutLabel Label
--}  

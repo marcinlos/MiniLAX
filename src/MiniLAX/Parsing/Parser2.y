@@ -19,9 +19,9 @@ import MiniLAX.Diagnostic
 
 
 %left NOT_P
-%left '*'
-%left '+'
 %left '<'
+%left '+'
+%left '*'
 
 %token
   Id                { Token (Id _) _ _ }

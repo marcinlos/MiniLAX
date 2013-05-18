@@ -6,8 +6,8 @@
 PROGRAM ex1;
 
 DECLARE
-  fib : ARRAY [1..10] OF INTEGER;
-  PROCEDURE F(n : INTEGER);
+  fib : ARRAY [1..10] OF ARRAY [1..4] OF INTEGER
+  (*PROCEDURE F(n : INTEGER);
   DECLARE
     k: INTEGER;
     PROCEDURE dupa(VAR n : BOOLEAN; kk : INTEGER);
@@ -23,9 +23,10 @@ DECLARE
     WHILE k < n DO
       fib[k+2] := fib[k + 1] + fib[k]
     END
-  END
+  END*)
 BEGIN
-  F(3)
+  (*F(3)*)
+  fib[3][7] := fib[1][2]
 END.
 
 

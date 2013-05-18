@@ -1,12 +1,9 @@
 module MiniLAX.AST.Util where
 
 --
-import Data.Typeable
-
 import MiniLAX.Parsing.LexerCore
 import MiniLAX.AST.Annotated
 import MiniLAX.Location
-import MiniLAX.Util.AttrMap
 
 import qualified MiniLAX.Static.Types as T
 

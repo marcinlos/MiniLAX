@@ -2,8 +2,6 @@
 module MiniLAX.Parsing.ParserCore where
 
 --
-import Data.Traversable
--- | Monad it lives in
 import MiniLAX.Compiler
 import MiniLAX.AST.Annotated
 import MiniLAX.Location

@@ -28,4 +28,4 @@ instance (Monad m) => MonadFlag (FlagT m) where
     checkFlag    = get
     
 runFlagT :: FlagT m a -> m (a, Bool)
-runFlagT flag = runStateT flag True
+runFlagT flag = runStateT flag False

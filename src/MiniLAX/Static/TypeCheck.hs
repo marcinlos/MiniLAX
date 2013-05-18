@@ -168,13 +168,6 @@ doFail e = setError >> withType TypeError e
 doFail_ :: (MonadDiag m, MonadFlag m, Annotated a Properties) => a ->  m a
 doFail_ m = return fst `ap` doFail m 
 
---typeError :: (Monad m, Annotated a Properties) => 
---    a -> Location -> String -> CompilerT m (a, Type)
---typeError v loc msg = emitError (Just loc) msg >> doFail v 
-
-
---getType :: (Annotated a Properties) => a -> Type
---getType = getAttr "type" . attr
 
 setType :: (Annotated a Properties) => Type -> a -> a
 setType t = modifyAttr (putAttr "type" t)
@@ -280,9 +273,10 @@ instance Typed (AST.Variable Properties) where
     computeType (vars, _) var @ (VarName props n) =
         case E.lookup name vars of
             Just t -> withType t var
-            Nothing -> do emitError loc msg
-                          doFail var
-                          where msg = "Unresolved variable: `" ++ name ++ "'"
+            Nothing -> do 
+                emitError loc msg
+                doFail var
+                where msg = "Unresolved variable: `" ++ name ++ "'"
         where name = getName n
               loc  = props .#. "pos"
               

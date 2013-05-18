@@ -2,9 +2,9 @@ PROGRAM ex1;
 
 DECLARE
   fib : ARRAY [1..10] OF INTEGER;
-  fib : INTEGER;
+  dupa : INTEGER;
 BEGIN
-  F(3);
+  fib := fib + 3;
 END.
 
 

@@ -11,6 +11,7 @@ import System.Environment
 import System.IO
 import System.Exit
 
+import Data.Map (Map)
 import Data.Traversable as Trav (forM)
 
 import Control.Applicative
@@ -28,6 +29,7 @@ import MiniLAX.Parsing.LexerCore ()
 import MiniLAX.Printer
 import MiniLAX.AST.Annotated
 --import MiniLAX.AST.PrettyPrint
+import MiniLAX.IR.Generate
 
 import MiniLAX.Parsing.Parser2
 
@@ -54,7 +56,8 @@ run = do
         maybeDumpAST ast
         sym <- collectSymbols ast
         maybeDumpSymbols sym
-        sym' <- analyze sym
+        (procs, entry) <- analyze sym
+        maybeDumpIR procs
         return ()
     void $ Trav.forM diag print
     case res of 
@@ -102,5 +105,11 @@ maybeDumpSymbols :: Procedure -> Compiler ()
 maybeDumpSymbols syms =
     ifEnabled optDumpSymbolTable $ do
         let s = printProc "" syms
+        liftIO $ putStrLn $ getString s
+        
+maybeDumpIR :: Map String Procedure -> Compiler ()
+maybeDumpIR procs = 
+    ifEnabled optDumpIR $ do
+        let s = printProceduresIR procs
         liftIO $ putStrLn $ getString s
     

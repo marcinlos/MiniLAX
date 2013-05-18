@@ -35,6 +35,7 @@ data Options = Options {
     optDumpSymbolTable         :: Bool,
     optDumpFreeVars            :: Bool,
     optDumpLambdaLifted        :: Bool,
+    optDumpIR                  :: Bool,
     optDumpJasmin              :: Bool
 }
 
@@ -51,6 +52,7 @@ defaultOptions = Options {
     optDumpSymbolTable         = False,
     optDumpFreeVars            = False,
     optDumpLambdaLifted        = False,
+    optDumpIR                  = False,
     optDumpJasmin              = False
 }
 
@@ -152,6 +154,10 @@ options = [
     Option [] ["dump-lifted"]
         (NoArg $ \opts -> return opts { optDumpLambdaLifted = True })
         "Outputs lambda-lifted code",
+        
+    Option [] ["dump-ir"]
+        (NoArg $ \opts -> return opts { optDumpIR = True })
+        "Outputs intermediate code",
         
     Option [] ["dump-jasmin"]
         (NoArg $ \opts -> return opts { optDumpJasmin = True })

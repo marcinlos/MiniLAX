@@ -42,7 +42,8 @@ executable mlax
                    MiniLAX.Util.LabelGen,
                    MiniLAX.IR.Generate,
                    MiniLAX.Util.AttrMap,
-                   MiniLAX.Util.Flag
+                   MiniLAX.Util.Flag,
+                   MiniLAX.IR.CodeGen
 
 test-suite Test
   type:            exitcode-stdio-1.0
@@ -83,7 +84,8 @@ test-suite Test
                   MiniLAX.Util.LabelGen,
                   MiniLAX.IR.Generate,
                   MiniLAX.Util.AttrMap,
-                  MiniLAX.Util.Flag
+                  MiniLAX.Util.Flag,
+                  MiniLAX.IR.CodeGen
   hs-source-dirs:  
                   tests,
                   src

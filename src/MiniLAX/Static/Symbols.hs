@@ -2,9 +2,10 @@
 module MiniLAX.Static.Symbols where
 
 -- Imports
-import Prelude hiding (foldl)
+import Prelude hiding (foldl, sequence_)
 import qualified Data.Map as M
 import Data.Foldable as F
+import Data.List (intersperse)
 
 import qualified MiniLAX.AST.Annotated as AST
 import MiniLAX.AST.Util
@@ -13,6 +14,8 @@ import MiniLAX.Printer
 import MiniLAX.Static.Types
 import MiniLAX.AST.PrettyPrint
 import MiniLAX.Util.AttrMap
+import MiniLAX.Diagnostic
+import MiniLAX.Util.Flag
 
 
 type SMap = M.Map String
@@ -47,6 +50,15 @@ instance Variable Parameter where
     varName  = paramName
     varType  = paramType
     varProps = paramProps
+    
+prettyVar :: (Variable a) => a -> PrinterMonad ()
+prettyVar v = append (varName v) %% " : " >> out (varType v)
+
+prettyParam :: Parameter -> PrinterMonad ()
+prettyParam p =
+    let prefix = case paramKind p of ByVal -> ""
+                                     ByVar -> "VAR "
+    in append prefix >> prettyVar p  
 
 getPos :: Properties -> Location
 getPos = getAttr "pos"
@@ -60,9 +72,18 @@ data Procedure = Procedure { procName     :: String
                            , procBody     :: [AST.Stmt Properties]
                            } 
     deriving (Show)
+    
+prettySignature :: Procedure -> PrinterMonad ()
+prettySignature Procedure { procName = name, procParams = params } = do
+    append name %% "("
+    sequence_ $ intersperse (append ", ") $ map prettyParam params
+    append ")"
+                          
+symbolError :: (MonadDiag m, MonadFlag m) => Maybe Location -> String -> m ()
+symbolError pos msg = emitError pos msg >> setFlag
 
-
-collectSymbols :: (Monad m) => AST.Program Properties -> m Procedure
+collectSymbols :: (Monad m, MonadDiag m, MonadFlag m) => 
+    AST.Program Properties -> m Procedure
 collectSymbols (AST.Program props (AST.Name _ name) body) = do
     (vars, nested) <- fromBlock body
     return Procedure { procName     = name
@@ -77,15 +98,30 @@ collectSymbols (AST.Program props (AST.Name _ name) body) = do
           
 type SymTable = (SMap Local, SMap Procedure)
           
-fromBlock :: (Monad m) => AST.Block Properties -> m SymTable
+fromBlock :: (MonadDiag m, MonadFlag m) => AST.Block Properties -> m SymTable
 fromBlock (AST.Block  _ decls _) =
     foldlM processDecl (M.empty, M.empty) decls
 
-processDecl :: (Monad m) => SymTable -> AST.Decl Properties -> m SymTable
+processDecl :: (MonadDiag m, MonadFlag m) => 
+    SymTable -> AST.Decl Properties -> m SymTable
 processDecl sym @ (vs, ps) decl = case decl of
-    AST.VarDecl pos (AST.Name _ vname) vtype -> return (vs', ps)
+    AST.VarDecl props (AST.Name _ vname) vtype ->
+        case M.lookup vname vs of 
+            Just prev @ Local {} -> do
+                let pos     = AST.attr decl .#. "pos"
+                    prevPos = varProps prev .#. "pos" :: Location
+                    thisStr = getString $ prettyVar var
+                    prevStr = getString $ prettyVar prev
+                    msg = "Multiple definitions of variable `" ++ vname ++
+                          "';\n  current at " ++ show pos ++ 
+                          ":\n    " ++ thisStr ++ 
+                          "\n  previous at " ++ show prevPos ++ 
+                          ":\n    " ++ prevStr
+                symbolError (Just pos) msg
+                return sym
+            Nothing -> return (vs', ps)
         where vs' = M.insert vname var vs
-              var = Local vname pos (ast2Type vtype)
+              var = Local vname props (ast2Type vtype)
               
     AST.ProcDecl props hd block -> do
         (vars, procs) <- fromBlock block
@@ -102,8 +138,23 @@ processDecl sym @ (vs, ps) decl = case decl of
                              }
         insertProc proc sym
         
-insertProc :: (Monad m) => Procedure -> SymTable -> m SymTable
-insertProc proc (vs, ps) = return (vs, M.insert (procName proc) proc ps) 
+insertProc :: (MonadDiag m, MonadFlag m) => 
+    Procedure -> SymTable -> m SymTable
+insertProc proc sym @ (vs, ps) =
+    case M.lookup (procName proc) ps of
+        Just prev @ Procedure { procProps = props } -> do
+            let pos     = procProps proc .#. "pos"
+                prevPos = props .#. "pos" :: Location
+                thisStr = getString $ prettySignature proc
+                prevStr = getString $ prettySignature prev
+                msg = "Multiple definitions of procedure `" ++ procName proc ++
+                      "';\n  current at " ++ show pos ++ 
+                      ":\n    " ++ thisStr ++ 
+                      "\n  previous at " ++ show prevPos ++ 
+                      ":\n    " ++ prevStr
+            symbolError (Just pos) msg
+            return sym
+        Nothing -> return (vs, M.insert (procName proc) proc ps) 
 
 getParams :: (Monad m) => 
     AST.ProcHead Properties -> m ([Parameter], SMap Parameter)

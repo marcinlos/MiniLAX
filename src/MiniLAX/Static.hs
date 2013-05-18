@@ -20,10 +20,10 @@ type Prog = (ProcMap, String)
 
 analyze :: (Functor m, MonadIO m) => Procedure -> CompilerT m Prog
 analyze p = do
-    void $ typecheck emptyTypeEnv p
+    checked <- typecheck emptyTypeEnv p
     throwIfFlag "*** Errors during typechecking, aborting"
-    maybeDumpFreeVars p
-    prog <- lambdaLift p
+    maybeDumpFreeVars checked
+    prog <- lambdaLift checked
     maybeDumpLifted prog
     return prog
     

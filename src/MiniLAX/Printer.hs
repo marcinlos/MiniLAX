@@ -11,7 +11,10 @@ module MiniLAX.Printer (
     ind,
     (%%),
     indent, 
+    indentedBy,
     indented,
+    shLeftBy,
+    shRightBy,
     shLeft,
     shRight,
     bracketed
@@ -87,13 +90,20 @@ indent :: Int -> PrinterMonad ()
 indent k = PrinterMonad $ \s @ PrintState { getIndent = n } ->
     let s' = s { getIndent = n + k, getContent = id } 
     in ((), s')
+    
+shRightBy, shLeftBy :: Int -> PrinterMonad ()
+shRightBy = indent
+shLeftBy = indent . negate
 
 shRight, shLeft :: PrinterMonad ()
-shRight = indent 1
-shLeft  = indent (-1)
+shRight = shRightBy 1
+shLeft  = shLeftBy 1
 
 indented :: PrinterMonad a -> PrinterMonad ()
-indented s = shRight >> s >> shLeft
+indented = indentedBy 1
+
+indentedBy :: Int -> PrinterMonad a -> PrinterMonad ()
+indentedBy n s = shRightBy n >> s >> shLeftBy n  
 
 bracketed :: PrinterMonad a -> PrinterMonad ()
 bracketed s = append "{" >> endl >> indented s >> put "}" >> endl
