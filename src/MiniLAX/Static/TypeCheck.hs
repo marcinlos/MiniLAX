@@ -18,6 +18,7 @@ import qualified MiniLAX.AST.Annotated as AST
 import MiniLAX.Printer
 import MiniLAX.AST.PrettyPrint
 import MiniLAX.Diagnostic
+import MiniLAX.Location
 import MiniLAX.Util.Flag
 import MiniLAX.Static.Symbols
 import MiniLAX.Static.Env as E
@@ -142,8 +143,18 @@ ensureUsableAsVar env t e = do
     
     
 checkProcCall :: (Functor m, MonadDiag m, MonadFlag m) =>
-    TypeEnv -> Procedure -> [ExprP] -> m [ExprP]
-checkProcCall env Procedure { procParams = params } es = 
+    TypeEnv -> Maybe Location -> Procedure -> [ExprP] -> m [ExprP]
+checkProcCall env pos Procedure { procName = name, procParams = params } es = do
+    let expected = length params
+        actual   = length es
+    when (expected /= actual) $ do 
+        let what = if expected < actual then "Too many parameters"
+                                        else "Missing parameters"
+            msg = what ++ " in a call of procedure `" ++
+                  name ++ "' (" ++ show actual ++ " present, " ++ 
+                  show expected ++ " expected)"
+        emitError pos msg
+        setError
     mapM check $ zip params es
     where check = uncurry $ checkArg env
 
@@ -211,7 +222,7 @@ instance Typecheckable (Stmt Properties) where
     typecheck env @ (_, procs) c @ (ProcCall a n args) =
         case E.lookup name procs of
             Just proc -> do
-                args' <- checkProcCall env proc args
+                args' <- checkProcCall env loc proc args
                 return $ ProcCall a n args'
             Nothing -> do
                 emitError loc $ "Unknown procedure: `" ++ name ++ "'"

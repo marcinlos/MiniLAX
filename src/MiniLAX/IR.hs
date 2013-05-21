@@ -6,7 +6,10 @@ import MiniLAX.Printer
 import MiniLAX.Static.Types
 
 -- | Label
-newtype Label = Label Int deriving (Eq, Show)
+newtype Label = Label Int deriving (Eq)
+
+instance Show Label where
+    show (Label n) = 'L' : show n
 
 data IR = LoadInt String
         | LoadReal String
@@ -29,6 +32,7 @@ data IR = LoadInt String
         | StoreArrayReal
         | StoreArrayBool
         | Jump Label
+        | PreCall String
         | Call String
         | IfBool Label
         | IfNotBool Label
@@ -54,7 +58,7 @@ data IR = LoadInt String
 
 
 instance Printable Label where
-    prettyPrint (Label n) = append $ 'L' : show n 
+    prettyPrint = append . show 
 
         
 instance Printable IR where

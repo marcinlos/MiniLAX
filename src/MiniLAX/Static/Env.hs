@@ -25,6 +25,7 @@ type Label = String
 
 -- | Type representing environment
 newtype Env a = Env { getEnv :: [(Label, SMap a)] }
+    deriving (Show)
 
 apply :: ([(Label, SMap a)] -> [(Label, SMap a)]) -> Env a -> Env a
 apply f = Env . f . getEnv

@@ -4,12 +4,12 @@ module MiniLAX.IR.Generate where
 
 --
 import Prelude hiding (mapM)
-import Data.Map (Map)
+import Data.Map (Map, (!))
 import qualified Data.Map as M
-import Data.Monoid
 import Control.Monad.Trans.State
 import Data.Traversable
-import Control.Monad (void, liftM, liftM2)
+import Control.Monad (void, unless)
+import Control.Applicative
 
 import MiniLAX.IR as IR
 import MiniLAX.Static.Symbols
@@ -17,85 +17,133 @@ import MiniLAX.AST.Annotated as AST
 import MiniLAX.Static.Types as T
 import MiniLAX.Printer
 import MiniLAX.Util.AttrMap
+import MiniLAX.IR.CodeGen
 
+type Code = [IR]
 
-data GenState = GenState { genStateNextLabel :: Int }
-
-initState :: GenState
-initState = GenState { genStateNextLabel = 1 }
-
-data CodePart = CodePart { codeInstr :: [IR] }
-
-
-type GenIR = State GenState
- 
-instance Monoid CodePart where
-    mempty = CodePart []
-    a `mappend` b = CodePart $ codeInstr a ++ codeInstr b 
-
-instance Printable CodePart where
-    prettyPrint = mapM_ prettyPrint . codeInstr
+printCode :: Code -> PrinterMonad ()
+printCode = mapM_ prettyPrint
 
 instance MayHaveType Properties where
     getType = tryAttr "type"
     
 type ProcMap = Map String Procedure
 
-printProceduresIR :: ProcMap -> PrinterMonad ()
-printProceduresIR procs = void $ mapM printProcIR procs
+type Context = ProcMap
 
-printProcIR :: Procedure -> PrinterMonad ()
-printProcIR proc @ Procedure { procName = name } = do 
+printProceduresIR :: ProcMap -> PrinterMonad ()
+printProceduresIR procs = void $ mapM (printProcIR procs) procs
+
+printProcIR :: Context -> Procedure -> PrinterMonad ()
+printProcIR ctx proc @ Procedure { procName = name } = do 
     append name >> endl 
     append $ replicate 30 '-'
     endl
-    indentedBy 2 $ prettyPrint $ generateIR proc
+    indentedBy 2 $ printCode $ generateIR ctx proc
     endl
 
-generateIR :: Procedure -> CodePart
-generateIR p = fst $ runState (gen p) initState  
+generateIR :: Context -> Procedure -> Code
+generateIR ctx p = fst $ runState (gen ctx p) initState  
 
-infixl 2 .||.
+gen :: Context -> Procedure -> CodeGen Code
+gen ctx Procedure { procBody = body } = mapM_ (genStmt ctx) body >> instrList
+    
+genArithCmp :: (MayHaveType a) => 
+    Context -> Expr a -> 
+    (T.Type -> Label -> IR) -> 
+    Label -> CodeGen ()
+genArithCmp ctx (BinaryExpr _ (Less _) l r) comp dest = do
+    genExpr ctx l
+    genExpr ctx r
+    emit $ comp t dest
+    where t = justGetType $ attr l
+    
+genArithCmp _ _ _ _ = error "Internal error: Not an arithmetic comparison"
+    
+genBranch :: (MayHaveType a) => Context -> Expr a -> Label -> CodeGen ()
+genBranch ctx e @ (BinaryExpr _ (Less _) _ _) dest =
+    genArithCmp ctx e lessOf dest
+    where lessOf IntegerT = IfLessInt
+          lessOf RealT    = IfLessReal
+          lessOf _ = error "Internal error: Invalid type in comparison"
+          
+genBranch proc e dest = do
+    genExpr proc e
+    emit $ IfBool dest
 
-(.||.) :: CodePart -> IR -> CodePart
-part .||. instr = part <> CodePart [instr]
+genBranchNeg :: (MayHaveType a) => Context -> Expr a -> Label -> CodeGen ()
+genBranchNeg ctx e @ (BinaryExpr _ (Less _) _ _) dest = 
+    genArithCmp ctx e lessOf dest
+    where lessOf IntegerT = IfGteInt
+          lessOf RealT    = IfGteReal
+          lessOf _ = error "Internal error: Invalid type in comparison (neg cmp)"
 
-gen :: Procedure -> GenIR CodePart
-gen proc @ Procedure { procBody = body } = 
-    liftM mconcat $ mapM (genStmt proc) body
+genBranchNeg ctx e dest = do
+    genExpr ctx e
+    emit $ IfNotBool dest
 
-simple :: [IR] -> GenIR CodePart
-simple = return . CodePart
+genStmt :: (MayHaveType a) => Context -> Stmt a -> CodeGen ()
+genStmt ctx (Assignment _ l r) = do
+    genVar ctx l
+    genExpr ctx r
+    emit $ storeArrayByType t
+    where t = justGetType $ attr l  
+    
+genStmt proc (IfThenElse _ cond ifT ifF) = do
+    labElse  <- mkLabel
+    labAfter <- mkLabel
+    genBranchNeg proc cond labElse
+    genStmt proc `mapM_` ifT
+    emit $ Jump labAfter
+    emitLabel labElse
+    genStmt proc `mapM_` ifF
+    emitLabel labAfter 
+    
+genStmt proc (While _ cond body) = do
+    labBefore <- emitNewLabel
+    labAfter  <- mkLabel
+    genBranchNeg proc cond labAfter
+    genStmt proc `mapM_` body
+    emit $ Jump labBefore
+    emitLabel labAfter
+    
+genStmt ctx (ProcCall _ (Name _ n) args) = do
+    let Procedure { procParams = params } = ctx ! n
+    emit $ PreCall n
+    mapM_ pushParam' $ zipWith ((,) . paramKind) params args
+    emit $ Call n
+    where pushParam' = uncurry $ pushParam ctx
+    
+pushParam :: (MayHaveType a) => Context -> ParamKind -> Expr a -> CodeGen ()
+pushParam ctx ByVal e = genExpr ctx e
+pushParam ctx ByVar (VarExpr _ e) = genVar ctx e
+pushParam _ _ _ = error "Internal error: Trying to use non-lvalue as VAR"
+    
+    
+loadLit :: Literal a -> IR          
+loadLit (LitInt _ n)  = LoadIntConst n
+loadLit (LitReal _ x) = LoadRealConst x
+loadLit (LitMichal _) = LoadIntConst 3
+loadLit (LitTrue _)   = LoadBoolConst True
+loadLit (LitFalse _)  = LoadBoolConst False
 
-genStmt :: (MayHaveType a) => Procedure -> Stmt a -> GenIR CodePart
-genStmt proc (Assignment props l r) = do
-    l' <- genVar proc l
-    r' <- genExpr proc r
-    return $ l' <> r' .||. (storeArrayByType $ justGetType (attr l))  
 
+genExpr :: (MayHaveType a) => Context -> Expr a -> CodeGen ()
+genExpr _ (LitExpr _ literal) = emit $ loadLit literal
+             
 
-genExpr :: (MayHaveType a) => Procedure -> Expr a -> GenIR CodePart
-genExpr _ (LitExpr _ literal) = 
-    case literal of
-        LitInt _ n  -> simple [LoadIntConst n]
-        LitReal _ x -> simple [LoadRealConst x]
-        LitMichal _ -> simple [LoadIntConst 3]
-        LitTrue _   -> simple [LoadBoolConst True]
-        LitFalse _  -> simple [LoadBoolConst False]
-
-genExpr p (CastExpr _ t e) =
-    return . (<> CodePart [cast]) =<< genExpr p e
+genExpr ctx (CastExpr _ t e) = genExpr ctx e >> emit cast
     where cast = case t of TyInt _  -> IR.Real2Int
                            TyReal _ -> IR.Int2Real
                            _ -> error "Invalid cast"
-genExpr p (UnaryExpr _ op e) =
-    case op of
-       AST.Not _ -> return . (<> CodePart [NotBool]) =<< genExpr p e
+                           
+genExpr ctx (UnaryExpr _ (AST.Not _) e) = genExpr ctx e >> emit NotBool
+                                   
                                       
-genExpr p e @ (BinaryExpr t op left right) = do
-    left'  <- genExpr p left
-    right' <- genExpr p right
-    return $ left' <> right' .||. chooseBinOp t' op
+genExpr ctx (BinaryExpr _ op left right) = do
+    genExpr ctx left
+    genExpr ctx right
+    emit $ chooseBinOp t' op
     where t' = justGetType $ attr left
 
 genExpr p (VarExpr _ var) = genVal p var
@@ -110,23 +158,30 @@ chooseBinOp RealT (AST.Less _)     = LessReal
 chooseBinOp _ _ = error "Invalid binary operation"
     
     
-genVar :: (MayHaveType a) => Procedure -> AST.Variable a -> GenIR CodePart
-genVar p (VarName t (Name _ n)) = simple [load]
+genVar :: (MayHaveType a) => Context -> AST.Variable a -> CodeGen ()
+genVar _ (VarName t (Name _ n)) = do 
+    emit load
+    unless (isArray tp) $ emit $ LoadIntConst 0
     where load = case tp of IntegerT -> LoadIntVar n
                             RealT    -> LoadRealVar n
-                            _ -> error "Invalid type"
+                            ArrayT {} -> LoadArray n
+                            _ -> error $ "Internal error: Invalid type " ++ 
+                                         show tp ++ " (genVar)"
           tp = justGetType t
           
-genVar p (VarIndex _ (VarName _ (Name _ n)) idx) =
-    genExpr p idx >>= return . (CodePart [LoadArray n] <>)
+genVar ctx (VarIndex _ (VarName _ (Name _ n)) idx) = do
+    emit $ LoadArray n
+    genExpr ctx idx
 
-genVar p (VarIndex t base idx) = do 
-    base' <- genVar p base
-    idx'  <- genExpr p idx
-    return $ (base' .||. FetchArrayArray) <> idx' 
+genVar ctx (VarIndex _ base idx) = do 
+    genVar ctx base
+    emit FetchArrayArray
+    genExpr ctx idx
     
-genVal :: (MayHaveType a) => Procedure -> AST.Variable a -> GenIR CodePart
-genVal p v = liftM2 (.||.) (genVar p v) (return $ fetchArrayByType t)
+genVal :: (MayHaveType a) => Context -> AST.Variable a -> CodeGen ()
+genVal ctx v = do 
+    genVar ctx v
+    emit $ fetchArrayByType t
     where t = justGetType $ attr v 
     
     
@@ -136,9 +191,5 @@ opArith (AST.Times _) = True
 opArith _ = False 
     
     
-    
-    
-    
-    
-    
+
     

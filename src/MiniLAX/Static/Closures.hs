@@ -90,7 +90,7 @@ usedVars :: Expr a -> Vars
 usedVars (UnaryExpr _ _ x) = usedVars x
 usedVars (VarExpr _ v) = usedVarsIdx v
 usedVars (LitExpr _ _) = mempty
-usedVars (BinaryExpr _ _ x y) = vx `mappend` vy
+usedVars (BinaryExpr _ _ x y) = vx <> vy
     where vx = usedVars x
           vy = usedVars y
 usedVars (CastExpr _ _ e) = usedVars e
@@ -113,13 +113,13 @@ usedVarsLHS v = usedVarsIdx v
           
 -- | Determines variables used in a statement
 usedVarsStmt :: Stmt a -> Vars
-usedVarsStmt (Assignment _ v e) = usedVarsLHS v `mappend` usedVars e
+usedVarsStmt (Assignment _ v e) = usedVarsLHS v <> usedVars e
 usedVarsStmt (ProcCall _ _ es) = mconcat (usedVars `fmap` es)
 usedVarsStmt (IfThenElse _ cond ifTrue ifFalse) =
-    usedVars cond `mappend` ifTrue' `mappend` ifFalse'
+    usedVars cond <> ifTrue' <> ifFalse'
     where ifTrue'  = usedVarsBlock ifTrue
           ifFalse' = usedVarsBlock ifFalse
-usedVarsStmt (While _ cond body) = usedVars cond `mappend` usedVarsBlock body
+usedVarsStmt (While _ cond body) = usedVars cond <> usedVarsBlock body
 
 -- | Determines variables used in a procedure body
 usedVarsProc :: Procedure -> Vars
@@ -152,10 +152,10 @@ liftLambdas env p @ Procedure { procName     = name
                               } = 
     (addParameters env free p', free)
     where p'       = p { procNested = nested', procBody = body' }
-          body'    = patchStmt patchRec <$> body
+          body'    = patchStmt env' patchRec <$> body
           patchRec = M.insert name (varsToList free) patch
           free     = used `without` declaredInProc p 
-          used     = usedVarsProc p `mappend` vars
+          used     = usedVarsProc p <> vars
           (nested', patch, vars) = liftChildren env' nested
           env' = E.pushLayer name (makeTypeMap p) env
           
@@ -174,7 +174,7 @@ patchChildren env patch procs =
         else (procs', patch')
     where procs'  = fst <$> res
           vars    = snd <$> res
-          res     = liftLambdas env <$> (patchProc patch <$> procs)
+          res     = liftLambdas env <$> (patchProc env patch <$> procs)
           patch'   = M.keys . getVars <$> vars
     
 -- | Updates formal parameter list and map with given variables. Environment
@@ -196,9 +196,7 @@ addParameters env (Vars vars) p @ Procedure { procParams = params
 
 
 makeTypeMap :: Procedure -> SMap T.Type
-makeTypeMap Procedure { procParamMap = params
-                      , procVars = locals 
-                      } = 
+makeTypeMap Procedure { procParamMap = params, procVars = locals         } = 
     params' `M.union` locals'
     where params' = varType <$> params
           locals' = varType <$> locals
@@ -210,36 +208,42 @@ mkName = Name emptyAttr
 mkVarExpr :: String -> Expr Properties
 mkVarExpr = VarExpr emptyAttr . VarName emptyAttr . mkName
 
+mkVarWithType :: Env T.Type -> String -> Expr Properties
+mkVarWithType env name = VarExpr props $ VarName props $ mkName name
+    where t = maybe (error $ "fuck :/" ++ show env ++ ", " ++ name) id (E.lookup name env)
+          props = singleton "type" t
+
 
 -- | Patches a procedure body and bodies of nested procedures. It does not
 -- perform lambda lifting during the process.
-patchProc :: Patch -> Procedure -> Procedure
-patchProc patch p @ Procedure { procBody = body
-                              , procNested = nested 
-                              } = 
-    p { procBody   = patchStmt patch <$> body
-      , procNested = patchProc patch <$> nested 
-      }
+patchProc :: Env T.Type -> Patch -> Procedure -> Procedure
+patchProc env patch proc = proc { procBody = body', procNested = nested' } 
+    where body'   = patchStmt env' patch <$> procBody proc
+          nested' = patchProc env' patch <$> procNested proc
+          env'    = E.pushAll vars env
+          vars    = params' `M.union` locals'
+          params' = paramType <$> procParamMap proc
+          locals' = varType <$> procVars proc
 
 
 -- | Given a patch, applies it to a single statement, recursively if necessary.
-patchStmt :: Patch -> Stmt Properties -> Stmt Properties
-patchStmt patch c @ (ProcCall a n @ (Name _ s) args) = 
+patchStmt :: Env T.Type -> Patch -> Stmt Properties -> Stmt Properties
+patchStmt env patch c @ (ProcCall a n @ (Name _ s) args) = 
     case M.lookup s patch of
         Just vars -> ProcCall a n vars' 
-            where vars' = args ++ (mkVarExpr <$> vars)
+            where vars' = args ++ (mkVarWithType env <$> vars)
         _ -> c
             
-patchStmt patch (IfThenElse a cond ifT ifF) = 
+patchStmt env patch (IfThenElse a cond ifT ifF) = 
     IfThenElse a cond ifT' ifF'
-    where ifT' = patchStmt patch <$> ifT
-          ifF' = patchStmt patch <$> ifF
+    where ifT' = patchStmt env patch <$> ifT
+          ifF' = patchStmt env patch <$> ifF
           
-patchStmt patch (While a cond body) = 
+patchStmt env patch (While a cond body) = 
     While a cond body'
-    where body' = patchStmt patch <$> body
+    where body' = patchStmt env patch <$> body
     
-patchStmt _ asg = asg
+patchStmt _ _ asg = asg
 
 -- | Renames procedure inside a statement using given mapping
 renameProcs :: SMap String -> Stmt a -> Stmt a

@@ -1,13 +1,24 @@
 -- | Code generation monad and helper functions
-module MiniLAX.IR.CodeGen where
+module MiniLAX.IR.CodeGen (
+    GenState (..),
+    initState,
+    CodeGen,
+    putInstr,
+    instrSeq,
+    instrList,
+    emit,
+    mkLabel,
+    emitLabel,
+    emitNewLabel,
+    CtrlDest,
+    continue,
+    followedBy
+) where
 
 --
 import Data.Sequence
-import Data.Traversable
 import Data.Foldable
-import Data.Monoid
 
-import Control.Applicative ((<$>))
 import Control.Monad.Trans.State
 
 import MiniLAX.IR
@@ -18,7 +29,7 @@ data GenState = GenState { stateNextLabel :: Int
                          } 
                          
 initState :: GenState
-initState = GenState { stateNextLabel = 1
+initState = GenState { stateNextLabel = 0
                      , stateInstr     = empty
                      }
                      
@@ -41,14 +52,17 @@ emit = modify . putInstr
 
 mkLabel :: CodeGen Label
 mkLabel = do
-    n <- (+1) <$> gets stateNextLabel
-    modify $ \x -> x { stateNextLabel = n }
+    n <- gets stateNextLabel
+    modify $ \x -> x { stateNextLabel = n + 1 }
     return $ Label n
     
-emitLabel :: CodeGen Label
-emitLabel = do
+emitLabel :: Label -> CodeGen ()
+emitLabel = emit . PutLabel
+    
+emitNewLabel :: CodeGen Label
+emitNewLabel = do
     l <- mkLabel
-    emit $ PutLabel l
+    emitLabel l
     return l
     
 data CtrlDest = Return

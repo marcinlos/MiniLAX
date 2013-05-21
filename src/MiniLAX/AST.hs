@@ -69,6 +69,10 @@ data ProcHead = ProcHead {
 
 type ExprSeq = [Expr]
 
+data BinOp = Plus | Times | Less deriving (Eq, Show)
+
+data UnOp = Not deriving (Eq, Show)
+
 -- | Expression, many kinds of
 data Expr = 
     BinaryExpr {

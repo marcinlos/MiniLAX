@@ -58,7 +58,7 @@ run = do
         maybeDumpSymbols sym
         (procs, entry) <- analyze sym
         maybeDumpIR procs
-        return ()
+        return () 
     void $ Trav.forM diag print
     case res of 
         Right _ -> return ()

@@ -6,11 +6,12 @@
 PROGRAM ex1;
 
 DECLARE
-  fib : ARRAY [1..10] OF ARRAY [1..4] OF INTEGER
-  (*PROCEDURE F(n : INTEGER);
+  fib : ARRAY [1..10] OF  INTEGER;
+  a : INTEGER;
+  PROCEDURE F(n : INTEGER);
   DECLARE
     k: INTEGER;
-    PROCEDURE dupa(VAR n : BOOLEAN; kk : INTEGER);
+    PROCEDURE ciastko(VAR n : BOOLEAN; kk : INTEGER);
     DECLARE
       j: INTEGER;
       gg: ARRAY [4..9] OF BOOLEAN
@@ -22,11 +23,20 @@ DECLARE
     fib[2] := 1 + }:-> ;
     WHILE k < n DO
       fib[k+2] := fib[k + 1] + fib[k]
+
     END
-  END*)
+  END
 BEGIN
-  (*F(3)*)
-  fib[3][7] := fib[1][2]
+  F(a);
+  IF NOT (a < }:->) THEN
+    fib[3] := fib[1]
+  ELSE
+    fib[2] := 8
+  END;
+  WHILE a < 7 DO
+    fib[1] := a * 3 + 7;
+    a := a + 1
+  END
 END.
 
 
