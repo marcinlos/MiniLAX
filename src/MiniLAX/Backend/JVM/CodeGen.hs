@@ -3,22 +3,11 @@
 module MiniLAX.Backend.JVM.CodeGen where
 
 -- Imports
-import Control.Monad.Trans.Error
-import Control.Monad.Trans.State
+import Data.Map (Map)
 
-import MiniLAX.Diagnostic
 import MiniLAX.IR
 import MiniLAX.Printer
+import MiniLAX.Static.Symbols
 
-type ErrMsg = String
-
--- | Code generation monad
-newtype CodeGen a = CodeGen { 
-    runCodeGen :: DiagT (State CodeGenState) a
-}
-
--- | State maintained during generating the code
-data CodeGenState = CodeGenState {
-    
-}
-
+genJVM :: (Map String Procedure, String) -> PrinterMonad ()
+genJVM = undefined

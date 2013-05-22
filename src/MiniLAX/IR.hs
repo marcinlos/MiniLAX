@@ -34,6 +34,12 @@ data IR = LoadInt String
         | Jump Label
         | PreCall String
         | Call String
+        | WriteBool
+        | WriteInt 
+        | WriteReal
+        | ReadBool
+        | ReadInt
+        | ReadReal
         | IfBool Label
         | IfNotBool Label
         | IfGteInt Label
@@ -63,16 +69,30 @@ instance Printable Label where
         
 instance Printable IR where
     prettyPrint (PutLabel lab) = prettyPrint lab %% ":" >> endl
-    prettyPrint i = (put $ show i) >> endl
+    prettyPrint i = put (show i) >> endl
+    
+writeByType :: Type -> IR
+writeByType BooleanT = WriteBool
+writeByType IntegerT = WriteInt
+writeByType RealT    = WriteReal
+writeByType _        = error "Internal error: Invalid type (writeByType)"
+
+readByType :: Type -> IR
+readByType BooleanT = ReadBool
+readByType IntegerT = ReadInt
+readByType RealT    = ReadReal
+readByType _        = error "Internal error: Invalid type (readByType)"
+
     
 fetchArrayByType :: Type -> IR
 fetchArrayByType IntegerT = FetchArrayInt
 fetchArrayByType RealT    = FetchArrayReal
 fetchArrayByType BooleanT = FetchArrayBool
 fetchArrayByType ArrayT {} = FetchArrayArray
+fetchArrayByType _ = error "Internal error: Invalid type (fetchArrayByType)"
 
 storeArrayByType :: Type -> IR
 storeArrayByType IntegerT = StoreArrayInt
 storeArrayByType RealT    = StoreArrayReal
 storeArrayByType BooleanT = StoreArrayBool
-
+storeArrayByType _ = error "Internal error: Invalid type (storeArrayByType)"

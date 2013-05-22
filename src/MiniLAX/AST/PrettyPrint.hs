@@ -78,6 +78,12 @@ instance Pretty (Stmt a) where
         indented $ mapM_ out body
         put "END" >> endl
         
+    out (Write _ e) =
+        put "WRITE(" >> out e %% ")" >> endl
+        
+    out (Read _ v) =
+        put "READ(" >> out v %% ")" >> endl
+        
 instance Pretty (Expr a) where
     out (BinaryExpr _ op left right) = 
         out left %% " " >> out op %% " " >> out right

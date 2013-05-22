@@ -37,7 +37,8 @@ tokens :-
   
   "ARRAY" | "BEGIN" | "BOOLEAN" | "DECLARE" | "DO" | "ELSE" | "END" |
   "FALSE" | "IF" | "INTEGER" | "NOT"| "OF" | "PROCEDURE" | "PROGRAM" |
-  "REAL" | "THEN" | "TRUE" | "VAR" | "WHILE" { mkT Keyword }
+  "REAL" | "THEN" | "TRUE" | "VAR" | "WHILE" | "WRITE" | "READ" 
+                                   { mkT Keyword }
   
   @id                              { mkT Id }
 

@@ -43,7 +43,8 @@ executable mlax
                    MiniLAX.IR.Generate,
                    MiniLAX.Util.AttrMap,
                    MiniLAX.Util.Flag,
-                   MiniLAX.IR.CodeGen
+                   MiniLAX.IR.CodeGen,
+                   MiniLAX.Backend.JVM.Type
 
 test-suite Test
   type:            exitcode-stdio-1.0
@@ -85,7 +86,8 @@ test-suite Test
                   MiniLAX.IR.Generate,
                   MiniLAX.Util.AttrMap,
                   MiniLAX.Util.Flag,
-                  MiniLAX.IR.CodeGen
+                  MiniLAX.IR.CodeGen,
+                  MiniLAX.Backend.JVM.Type
   hs-source-dirs:  
                   tests,
                   src

@@ -22,7 +22,6 @@ import Control.Monad.Trans
 
 import MiniLAX.Compiler
 import MiniLAX.Options
-import MiniLAX.Location
 
 import MiniLAX.Parsing.Lexer
 import MiniLAX.Parsing.LexerCore ()
@@ -36,7 +35,7 @@ import MiniLAX.Parsing.Parser2
 import MiniLAX.Static.Symbols
 import MiniLAX.Static
 
-import MiniLAX.Backend.JVM.Skeleton ()
+import MiniLAX.Backend.JVM.Skeleton (example)
 
 
 main :: IO ()
@@ -56,9 +55,9 @@ run = do
         maybeDumpAST ast
         sym <- collectSymbols ast
         maybeDumpSymbols sym
-        (procs, entry) <- analyze sym
+        res @ (procs, _) <- analyze sym
         maybeDumpIR procs
-        return () 
+        maybeDumpASM res
     void $ Trav.forM diag print
     case res of 
         Right _ -> return ()
@@ -113,3 +112,9 @@ maybeDumpIR procs =
         let s = printProceduresIR procs
         liftIO $ putStrLn $ getString s
     
+maybeDumpASM :: (Map String Procedure, String) -> Compiler ()
+maybeDumpASM (procs, entry) = 
+    ifEnabled optDumpASM $ do
+        liftIO $ putStrLn $ getString example
+
+

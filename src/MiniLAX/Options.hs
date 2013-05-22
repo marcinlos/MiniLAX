@@ -36,7 +36,7 @@ data Options = Options {
     optDumpFreeVars            :: Bool,
     optDumpLambdaLifted        :: Bool,
     optDumpIR                  :: Bool,
-    optDumpJasmin              :: Bool
+    optDumpASM                 :: Bool
 }
 
 -- | Default value of the options
@@ -53,7 +53,7 @@ defaultOptions = Options {
     optDumpFreeVars            = False,
     optDumpLambdaLifted        = False,
     optDumpIR                  = False,
-    optDumpJasmin              = False
+    optDumpASM                 = False
 }
 
 
@@ -159,8 +159,8 @@ options = [
         (NoArg $ \opts -> return opts { optDumpIR = True })
         "Outputs intermediate code",
         
-    Option [] ["dump-jasmin"]
-        (NoArg $ \opts -> return opts { optDumpJasmin = True })
+    Option [] ["dump-asm"]
+        (NoArg $ \opts -> return opts { optDumpASM = True })
         "Outputs jasmin assembly generated from the input",
 
     Option "v" ["verbosity"]

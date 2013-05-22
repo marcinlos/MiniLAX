@@ -58,8 +58,8 @@ testStmt vars stmt = assertEqual (M.fromList vars) res
     where Vars res = usedVarsStmt stmt
 
 rd, wr :: String -> (String, Usage)
-rd = flip (,) Read
-wr = flip (,) Write
+rd = flip (,) ReadU
+wr = flip (,) WriteU
 
 --test_isIndexed_Var = assertBool (isIndexed 
 

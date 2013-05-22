@@ -177,16 +177,22 @@ data Stmt l =
   | ProcCall l (Name l) [Expr l]
   | IfThenElse l (Expr l) [Stmt l] [Stmt l]
   | While l (Expr l) [Stmt l]
+  | Write l (Expr l)
+  | Read l (Variable l)
   
 instance Annotated (Stmt l) l where
     attr (Assignment l _ _) = l
     attr (ProcCall l _ _) = l
     attr (IfThenElse l _ _ _) = l
     attr (While l _ _) = l
+    attr (Write l _) = l
+    attr (Read l _) = l
     modifyAttr f (Assignment l v e) = Assignment (f l) v e
     modifyAttr f (ProcCall l n e) = ProcCall (f l) n e
     modifyAttr f (IfThenElse l e ifT ifF) = IfThenElse (f l) e ifT ifF
     modifyAttr f (While l e s) = While (f l) e s
+    modifyAttr f (Write l e) = Write (f l) e
+    modifyAttr f (Read l v) = Read (f l) v
     
 instance Functor Stmt where
     fmap f (Assignment l x y) = Assignment (f l) (f <$> x) (f <$> y) 
@@ -202,12 +208,18 @@ instance Functor Stmt where
     fmap f (While l cond body) = While (f l) (f <$> cond) (f' body)
         where f' = map (f <$>)
         
+    fmap f (Write l e) = Write (f l) (f <$> e)
+    
+    fmap f (Read l v) = Read (f l) (f <$> v)
+        
 instance Foldable Stmt where
     foldMap f (Assignment l x y) = f l <> foldMap f x <> foldMap f y
     foldMap f (ProcCall l name ps) = f l <> foldMap f name <> fold2 f ps
     foldMap f (IfThenElse l c ifT ifF) = 
         f l <> foldMap f c <> fold2 f ifT <> fold2 f ifF
     foldMap f (While l c body) = f l <> foldMap f c <> fold2 f body
+    foldMap f (Write l e) = f l <> foldMap f e
+    foldMap f (Read l v) = f l <> foldMap f v 
     
 instance Traversable Stmt where
     traverse f (Assignment l x y) = Assignment <$> f l <*> x' <*> y'
@@ -224,6 +236,10 @@ instance Traversable Stmt where
     traverse f (While l c body) = While <$> f l <*> c' <*> body'    
         where c'    = traverse f c
               body' = traverse (traverse f) body
+              
+    traverse f (Write l e) = Write <$> f l <*> traverse f e
+    
+    traverse f (Read l v) = Read <$> f l <*> traverse f v
   
 deriving instance (Show l) => Show (Stmt l) 
   

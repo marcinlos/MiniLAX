@@ -5,11 +5,9 @@ module MiniLAX.IR.Generate where
 --
 import Prelude hiding (mapM)
 import Data.Map (Map, (!))
-import qualified Data.Map as M
 import Control.Monad.Trans.State
 import Data.Traversable
-import Control.Monad (void, unless)
-import Control.Applicative
+import Control.Monad (void)
 
 import MiniLAX.IR as IR
 import MiniLAX.Static.Symbols
@@ -114,6 +112,16 @@ genStmt ctx (ProcCall _ (Name _ n) args) = do
     emit $ Call n
     where pushParam' = uncurry $ pushParam ctx
     
+genStmt ctx (Write _ e) = do
+    genExpr ctx e
+    emit $ writeByType t
+    where t = justGetType $ attr e
+    
+genStmt ctx (Read _ v) = do
+    genVar ctx v
+    emit $ readByType t
+    where t = justGetType $ attr v
+    
 pushParam :: (MayHaveType a) => Context -> ParamKind -> Expr a -> CodeGen ()
 pushParam ctx ByVal e = genExpr ctx e
 pushParam ctx ByVar (VarExpr _ e) = genVar ctx e
@@ -159,11 +167,12 @@ chooseBinOp _ _ = error "Invalid binary operation"
     
     
 genVar :: (MayHaveType a) => Context -> AST.Variable a -> CodeGen ()
-genVar _ (VarName t (Name _ n)) = do 
+genVar _ (VarName t (Name _ n)) =
     emit load
-    unless (isArray tp) $ emit $ LoadIntConst 0
-    where load = case tp of IntegerT -> LoadIntVar n
-                            RealT    -> LoadRealVar n
+    --unless (isArray tp) $ emit $ LoadIntConst 0
+    where load = case tp of BooleanT  -> LoadBoolVar n
+                            IntegerT  -> LoadIntVar n
+                            RealT     -> LoadRealVar n
                             ArrayT {} -> LoadArray n
                             _ -> error $ "Internal error: Invalid type " ++ 
                                          show tp ++ " (genVar)"

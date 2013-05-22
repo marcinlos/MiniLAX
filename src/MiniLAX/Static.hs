@@ -5,7 +5,6 @@ module MiniLAX.Static (
 
 -- Imports
 import qualified Data.Map as M
-import Control.Monad (void)
 import Control.Monad.IO.Class
 
 import MiniLAX.Compiler

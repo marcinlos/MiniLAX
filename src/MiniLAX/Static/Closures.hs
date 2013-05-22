@@ -39,13 +39,13 @@ import MiniLAX.Static.Env (Env)
 import qualified MiniLAX.Static.Env as E
 import MiniLAX.Util.AttrMap
 
-data Usage = Read | Write deriving (Eq, Enum, Show)
+data Usage = ReadU | WriteU deriving (Eq, Enum, Show)
 
 instance Monoid Usage where
-    mempty = Read
-    Write `mappend` _ = Write
-    _ `mappend` Write = Write
-    _ `mappend` _     = Read
+    mempty = ReadU
+    WriteU `mappend` _ = WriteU
+    _ `mappend` WriteU = WriteU
+    _ `mappend` _     = ReadU
     
 -- | Datatype representing variable usage
 newtype Vars = Vars { getVars :: SMap Usage }
@@ -102,13 +102,13 @@ usedVarsBlock = mconcat . map usedVarsStmt
 -- | Determines variables used in a variable/index expression as if it appears
 -- on the right hand side of an assignment, or in non-assignment expression.
 usedVarsIdx :: AST.Variable a -> Vars
-usedVarsIdx (VarName _ (Name _ n)) = singleVar n Read
+usedVarsIdx (VarName _ (Name _ n)) = singleVar n ReadU
 usedVarsIdx (VarIndex _ v i) = usedVarsIdx v `mappend` usedVars i
 
 -- | Determines variables used in a variable/index expression as if it appears
 -- as the target of an assigmnent statement.
 usedVarsLHS :: AST.Variable a -> Vars
-usedVarsLHS (VarName _ (Name _ n)) = singleVar n Write
+usedVarsLHS (VarName _ (Name _ n)) = singleVar n WriteU
 usedVarsLHS v = usedVarsIdx v
           
 -- | Determines variables used in a statement
@@ -120,6 +120,8 @@ usedVarsStmt (IfThenElse _ cond ifTrue ifFalse) =
     where ifTrue'  = usedVarsBlock ifTrue
           ifFalse' = usedVarsBlock ifFalse
 usedVarsStmt (While _ cond body) = usedVars cond <> usedVarsBlock body
+usedVarsStmt (Write _ e) = usedVars e
+usedVarsStmt (Read _ v) = usedVarsLHS v
 
 -- | Determines variables used in a procedure body
 usedVarsProc :: Procedure -> Vars
@@ -205,12 +207,10 @@ makeTypeMap Procedure { procParamMap = params, procVars = locals         } =
 mkName :: String -> Name Properties
 mkName = Name emptyAttr
   
-mkVarExpr :: String -> Expr Properties
-mkVarExpr = VarExpr emptyAttr . VarName emptyAttr . mkName
 
-mkVarWithType :: Env T.Type -> String -> Expr Properties
-mkVarWithType env name = VarExpr props $ VarName props $ mkName name
-    where t = maybe (error $ "fuck :/" ++ show env ++ ", " ++ name) id (E.lookup name env)
+mkVarExpr :: Env T.Type -> String -> Expr Properties
+mkVarExpr env name = VarExpr props $ VarName props $ mkName name
+    where t = fromMaybe (error $ "fuck :/" ++ show env ++ ", " ++ name) (E.lookup name env)
           props = singleton "type" t
 
 
@@ -231,7 +231,7 @@ patchStmt :: Env T.Type -> Patch -> Stmt Properties -> Stmt Properties
 patchStmt env patch c @ (ProcCall a n @ (Name _ s) args) = 
     case M.lookup s patch of
         Just vars -> ProcCall a n vars' 
-            where vars' = args ++ (mkVarWithType env <$> vars)
+            where vars' = args ++ (mkVarExpr env <$> vars)
         _ -> c
             
 patchStmt env patch (IfThenElse a cond ifT ifF) = 

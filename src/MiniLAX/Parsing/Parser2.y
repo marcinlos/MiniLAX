@@ -62,6 +62,8 @@ import MiniLAX.Diagnostic
   "TRUE"            { Token (Keyword "TRUE") _ _ }
   "VAR"             { Token (Keyword "VAR") _ _ }
   "WHILE"           { Token (Keyword "WHILE") _ _ }
+  "WRITE"           { Token (Keyword "WRITE") _ _ }
+  "READ"            { Token (Keyword "READ") _ _ }
   
 %%
 
@@ -80,7 +82,7 @@ DeclSeq :: { [Decl Location] }
   
 DeclSeqR :: { [Decl Location] }
   : Decl                                    { [$1] }
-  | DeclSeqR ';' error                          {% errDeclSemi $2 $1 } 
+  | DeclSeqR ';' error                      {% errDeclSemi $2 $1 } 
   | DeclSeqR ';' Decl                       { $3 : $1 }
   
 Decl :: { Decl Location }
@@ -148,6 +150,8 @@ Stat :: { Stmt Location }
   | ProcStat                                { $1 }
   | CondStat                                { $1 }
   | LoopStat                                { $1 }
+  | WriteStat                               { $1 }
+  | ReadStat                                { $1 }
   
 AssignStat :: { Stmt Location }
   : Var ":=" Expr                           { Assignment (attr $1) $1 $3 }
@@ -171,6 +175,11 @@ CondStat :: { Stmt Location }
 LoopStat :: { Stmt Location }
   : "WHILE" Expr "DO" StatSeq "END"         { While (tkPos $1) $2 $4 }
   
+WriteStat :: { Stmt Location }              
+  : "WRITE" '(' Expr ')'                    { Write (tkPos $1) $3 }
+  
+ReadStat :: { Stmt Location }
+  : "READ" '(' Var ')'                      { Read (tkPos $1) $3 }
   
 { 
 

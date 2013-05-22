@@ -140,7 +140,7 @@ ensureUsableAsVar env t e = do
             doFail e
     where isVar VarExpr {} = True
           isVar _          = False
-    
+          
     
 checkProcCall :: (Functor m, MonadDiag m, MonadFlag m) =>
     TypeEnv -> Maybe Location -> Procedure -> [ExprP] -> m [ExprP]
@@ -241,6 +241,22 @@ instance Typecheckable (Stmt Properties) where
         (cond', _) <- ensureBoolean env cond "As a WHILE condition" 
         body'      <- mapM (typecheck env) body
         return $ While props cond' body'
+        
+    typecheck env (Write props e) = do
+        (e', t) <- computeType env e
+        when (isArray t) $ do
+            emitError loc "Array type used as a WRITE argument"
+            setError
+        return $ Write props e'
+        where loc = Just $ attr e .#. "pos"
+        
+    typecheck env (Read props v) = do
+        (v', t) <- ensureAssignable env v
+        when (isArray t) $ do
+            emitError loc "Array type used as a WRITE argument"
+            setError
+        return $ Read props v'
+        where loc = Just $ attr v .#. "pos"
 
     
 instance Typed (Expr Properties) where
