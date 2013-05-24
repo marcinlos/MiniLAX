@@ -155,6 +155,9 @@ multianewarray s n = put "multianewarray " %% s %% " " %% show n >> endl
 getstatic :: String -> String -> PrinterMonad ()
 getstatic f t = put "getstatic " %% f %% " " %% t >> endl
 
+putstatic :: String -> String -> PrinterMonad ()
+putstatic f t = put "putstatic " %% f %% " " %% t >> endl
+
 invokevirtual :: String -> PrinterMonad ()
 invokevirtual m = put "invokevirtual " %% m >> endl
 
@@ -196,9 +199,9 @@ classHeader name  = do
 defaultConstructor :: PrinterMonad ()
 defaultConstructor =
     method "<init>()V" $ do
-        put "aload_0" >> endl
+        aload 0
         invokespecial "java/lang/Object/<init>()V"
-        put "return" >> endl
+        returnJ
     
 -- | Prints a method of given signature and body
 method :: String -> PrinterMonad a -> PrinterMonad ()
@@ -256,6 +259,7 @@ printBool = do
     pushSysOut
     swap
     invokevirtual "java/io/PrintStream/println(Z)V"
+    
     
 -- | Simple "Hello World" program
 example :: PrinterMonad ()

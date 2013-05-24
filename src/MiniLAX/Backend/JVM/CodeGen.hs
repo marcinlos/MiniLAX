@@ -29,27 +29,37 @@ data LocalVar = LocalVar { localVarPos :: Integer
                          }
     deriving (Show)
                        
-type Context = (SMap LocalVar, String -> String) 
+type Context = (SMap LocalVar, String, String -> String) 
 
 
 genJVM :: SMap (Procedure, Code) -> String -> PrinterMonad ()
 genJVM procs entry = do
     fileHeader
     classHeader className
+    endl
+    put ".field private static scanner Ljava/util/Scanner;" >> endl
+    endl
+    method "static <cinit>()V" $ do
+        limitStack 2
+        new "java/util/Scanner"
+        dup
+        invokespecial "java/util/Scanner/<init>()V"
+        putstatic (className ++ "/scanner") "Ljava/util/Scanner;"
+        returnJ
     void $ mapM mkProc procs  
     javaMain $ do
         invokestatic $ mkSig entry
         returnJ 
-    where mkProc = uncurry $ makeProcedure mkSig
+    where mkProc = uncurry $ makeProcedure mkSig className
           mkSig = show . fullProcSig className . fst . (procs !)
           className = entry ++ "Class"
             
 
-makeProcedure :: (String -> String) -> Procedure -> Code -> PrinterMonad ()
-makeProcedure f p c = 
+makeProcedure :: (String -> String) -> String -> Procedure -> Code -> PrinterMonad ()
+makeProcedure f clazz p c = 
     method name $ do
         vars <- makeIntro p
-        mapM_ (ir2JVM (vars, f)) c
+        mapM_ (ir2JVM (vars, clazz, f)) c
     where name  = "static " ++ show (procSig p)
           
 makeIntro :: Procedure -> PrinterMonad (SMap LocalVar)
@@ -160,14 +170,14 @@ ir2JVM _ StoreArrayInt = iastore
 ir2JVM _ StoreArrayReal = fastore
 ir2JVM _ StoreArrayBool = bastore
 
-ir2JVM (vars, _) (LoadBool v) = genericLoad vars v >> baload
-ir2JVM (vars, _) (LoadInt v) = genericLoad vars v >> iaload
-ir2JVM (vars, _) (LoadReal v) = genericLoad vars v >> faload
+ir2JVM (vars, _, _) (LoadBool v) = genericLoad vars v >> baload
+ir2JVM (vars, _, _) (LoadInt v) = genericLoad vars v >> iaload
+ir2JVM (vars, _, _) (LoadReal v) = genericLoad vars v >> faload
 
-ir2JVM (vars, _) (LoadBoolVar v) = genericLoad vars v
-ir2JVM (vars, _) (LoadIntVar v)  = genericLoad vars v
-ir2JVM (vars, _) (LoadRealVar v) = genericLoad vars v
-ir2JVM (vars, _) (LoadArray v) = aload $ localVarPos $ vars ! v  
+ir2JVM (vars, _, _) (LoadBoolVar v) = genericLoad vars v
+ir2JVM (vars, _, _) (LoadIntVar v)  = genericLoad vars v
+ir2JVM (vars, _, _) (LoadRealVar v) = genericLoad vars v
+ir2JVM (vars, _, _) (LoadArray v) = aload $ localVarPos $ vars ! v  
 
 ir2JVM _ (StoreBool _) = bastore
 ir2JVM _ (StoreInt _) = iastore
@@ -175,10 +185,14 @@ ir2JVM _ (StoreReal _) = fastore
 
 ir2JVM _ (Jump l) = goto (show l) 
 ir2JVM _ (PreCall _) = return ()
-ir2JVM (_, f) (Call name) = invokestatic $ f name  
+ir2JVM (_, _, f) (Call name) = invokestatic $ f name  
 ir2JVM _ WriteBool = printBool
 ir2JVM _ WriteInt  = printInt
 ir2JVM _ WriteReal = printFloat 
+
+ir2JVM (_, c, _) ReadBool = readBool c >> bastore
+ir2JVM (_, c, _) ReadInt  = readInt c  >> iastore
+ir2JVM (_, c, _) ReadReal = readReal c >> fastore
 
 ir2JVM _ (IfBool l)    = ifne (show l)
 ir2JVM _ (IfNotBool l) = ifeq (show l)
@@ -210,11 +224,6 @@ condZeroOrOne jmp = do
     iconst 1
     goto "$+4"
     iconst 0
-    {-
-        | ReadBool
-        | ReadInt
-        | ReadReal
-    -}
     
 genericLoad :: SMap LocalVar -> String -> PrinterMonad ()
 genericLoad vars v = do
@@ -230,6 +239,21 @@ procSig Procedure { procName = name, procParams = params } =
 fullProcSig :: String -> Procedure -> Method
 fullProcSig name proc @ Procedure { procName = n } = 
     procSig proc { procName = name ++ "/" ++ n }
+    
+readThing :: String -> String -> PrinterMonad ()
+readThing c m  = do 
+    getstatic (c ++ "/scanner") "Ljava/util/Scanner;"
+    invokevirtual $ "java/util/Scanner/" ++ m
+    
+readInt :: String -> PrinterMonad ()
+readInt = flip readThing "nextInt()I"
+
+readReal :: String -> PrinterMonad ()
+readReal = flip readThing "nextFloat()F"
+
+readBool :: String -> PrinterMonad ()
+readBool = flip readThing "nextBoolean()Z"
+
 
 paramToJVM :: Parameter -> [JVMType]
 paramToJVM p = case paramType p of

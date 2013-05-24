@@ -305,17 +305,22 @@ instance Typed (AST.Variable Properties) where
                 doFail var
                 where msg = "Unresolved variable: `" ++ name ++ "'"
         where name = getName n
-              loc  = props .#. "pos"
+              loc  = Just $ props .#. "pos"
               
     computeType env var @ (VarIndex props b i) = do
         (b', bt) <- computeType env b
         i' <- ensureIndex env i
         case bt of 
-            ArrayT t _ _ -> withType t $ VarIndex props b' i'
+            ArrayT t low _ -> withType t $ VarIndex props b' $ addConst low i'
             _ -> do emitError loc $ "Cannot index non-array type " ++ tstr
                     doFail var
                     where tstr = getString $ out bt
                           loc  = Just $ props .#. "pos" 
+                          
+addConst :: Integer -> ExprP -> ExprP
+addConst n e = 
+    setType IntegerT $ BinaryExpr emptyAttr (Plus emptyAttr) litN e
+    where litN = setType IntegerT $ LitExpr emptyAttr (LitInt emptyAttr n)  
 
 instance Typed (AST.Literal Properties) where
     computeType _ var @ (LitInt _ _)  = withType IntegerT var
