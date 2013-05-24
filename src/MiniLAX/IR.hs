@@ -17,7 +17,7 @@ data IR = LoadInt String
         | LoadIntVar String
         | LoadRealVar String
         | LoadBoolVar String
-        | LoadIntConst Int
+        | LoadIntConst Integer
         | LoadRealConst Float
         | LoadBoolConst Bool
         | LoadArray String
@@ -55,9 +55,6 @@ data IR = LoadInt String
         | MulReal
         | Int2Real
         | Real2Int 
-        | WrapArgInt String
-        | WrapArgReal String
-        | WrapArgBool String
         | PutLabel Label
         | Ret
         deriving (Eq, Show)

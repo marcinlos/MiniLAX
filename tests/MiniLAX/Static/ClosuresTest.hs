@@ -30,7 +30,7 @@ toE = VarExpr ()
 var :: String -> Expr ()
 var = toE . var_ 
 
-int :: Int -> Expr ()
+int :: Integer -> Expr ()
 int = LitExpr () . LitInt ()
 
 real :: Float -> Expr ()

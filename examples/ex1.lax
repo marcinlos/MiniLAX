@@ -8,10 +8,11 @@ PROGRAM ex1;
 DECLARE
   fib : ARRAY [1..10] OF  INTEGER;
   a : INTEGER;
+  b : BOOLEAN;
   PROCEDURE F(n : INTEGER);
   DECLARE
     k: INTEGER;
-    PROCEDURE ciastko(VAR n : BOOLEAN; kk : INTEGER);
+    PROCEDURE fuckWorld(VAR n : BOOLEAN; kk : INTEGER);
     DECLARE
       j: INTEGER;
       gg: ARRAY [4..9] OF BOOLEAN
@@ -19,15 +20,17 @@ DECLARE
       k := 9
     END
   BEGIN
+      WHILE TRUE DO
+        fuckWorld(b, 666)
+      END;
     fib[1] := 1;
     fib[2] := 1 + }:-> ;
     WHILE k < n DO
       fib[k+2] := fib[k + 1] + fib[k]
-
     END
   END
 BEGIN
-  F(a);
+  F(3);
   IF NOT (a < }:->) THEN
     fib[3] := fib[1]
   ELSE

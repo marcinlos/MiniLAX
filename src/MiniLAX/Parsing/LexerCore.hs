@@ -18,7 +18,7 @@ import MiniLAX.Location
 data TokenVal =
     Sym String
   | Id String
-  | Int Int 
+  | Int Integer 
   | Float Float
   | Keyword String
   | EOF
@@ -44,7 +44,7 @@ idV _ = error "Not an id"
 
 -- | Auxilary function fetching integer from the token.
 --   Warning: not total
-intV :: Token -> Int
+intV :: Token -> Integer
 intV Token { tkVal = Int n } = n
 intV _ = error "Not an int"
 

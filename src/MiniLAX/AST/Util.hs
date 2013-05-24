@@ -13,7 +13,7 @@ mkName Token { tkPos = pos, tkVal = Id val } = Name pos val
 mkName _ = error "Cannot make name"
 
 mkLit :: Token -> Literal Location
-mkLit Token { tkVal = Int n, tkPos = pos } = LitInt pos n
+mkLit Token { tkVal = Int n, tkPos = pos } = LitInt pos n 
 mkLit Token { tkVal = Float v, tkPos = pos } = LitReal pos v
 mkLit Token { tkVal = Keyword kw, tkPos = pos } = ctor kw pos
     where ctor "TRUE" = LitTrue
@@ -35,7 +35,7 @@ mkBin e Token { tkVal = Sym s, tkPos = pos } e' =
           op _   = error "Invalid operator"
 mkBin _ _ _ = error "Invalid operator"
 
-lit2Int :: Literal l -> Int
+lit2Int :: Literal l -> Integer
 lit2Int (LitInt _ n) = n
 lit2Int _ = error "Invalid literal"
  

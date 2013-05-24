@@ -5,9 +5,8 @@ module MiniLAX.IR.Generate where
 --
 import Prelude hiding (mapM)
 import Data.Map (Map, (!))
+import qualified Data.Map as M
 import Control.Monad.Trans.State
-import Data.Traversable
-import Control.Monad (void)
 
 import MiniLAX.IR as IR
 import MiniLAX.Static.Symbols
@@ -29,22 +28,26 @@ type ProcMap = Map String Procedure
 
 type Context = ProcMap
 
-printProceduresIR :: ProcMap -> PrinterMonad ()
-printProceduresIR procs = void $ mapM (printProcIR procs) procs
 
-printProcIR :: Context -> Procedure -> PrinterMonad ()
-printProcIR ctx proc @ Procedure { procName = name } = do 
-    append name >> endl 
+printProceduresIR :: SMap (Procedure, Code) -> PrinterMonad ()
+printProceduresIR procs = mapM_ (uncurry printProcIR . snd) $ M.toList procs
+
+printProcIR :: Procedure -> Code -> PrinterMonad ()
+printProcIR proc code = do 
+    append (procName proc) >> endl 
     append $ replicate 30 '-'
     endl
-    indentedBy 2 $ printCode $ generateIR ctx proc
+    indentedBy 2 $ printCode code
     endl
 
 generateIR :: Context -> Procedure -> Code
 generateIR ctx p = fst $ runState (gen ctx p) initState  
 
 gen :: Context -> Procedure -> CodeGen Code
-gen ctx Procedure { procBody = body } = mapM_ (genStmt ctx) body >> instrList
+gen ctx Procedure { procBody = body } = do
+    mapM_ (genStmt ctx) body
+    emit Ret 
+    instrList
     
 genArithCmp :: (MayHaveType a) => 
     Context -> Expr a -> 
@@ -130,7 +133,7 @@ pushParam _ _ _ = error "Internal error: Trying to use non-lvalue as VAR"
     
 loadLit :: Literal a -> IR          
 loadLit (LitInt _ n)  = LoadIntConst n
-loadLit (LitReal _ x) = LoadRealConst x
+loadLit (LitReal _ x) = LoadRealConst x 
 loadLit (LitMichal _) = LoadIntConst 3
 loadLit (LitTrue _)   = LoadBoolConst True
 loadLit (LitFalse _)  = LoadBoolConst False

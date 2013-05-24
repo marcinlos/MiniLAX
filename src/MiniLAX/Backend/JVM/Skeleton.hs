@@ -11,7 +11,7 @@ import MiniLAX.Printer
 lab :: String -> PrinterMonad ()
 lab s = append s %% ":" >> endl
 
-iconst :: Int -> PrinterMonad ()
+iconst :: Integer -> PrinterMonad ()
 iconst n | n == -1               = put "iconst_m1" >> endl
          | n >= 0    && n <= 5   = put "iconst_" %% show n >> endl
          | n >= -128 && n <= 127 = put "bipush " %% show n >> endl
@@ -23,11 +23,11 @@ aaload = put "aaload" >> endl
 aastore :: PrinterMonad ()
 aastore = put "aastore" >> endl
 
-aload :: Int -> PrinterMonad ()
+aload :: Integer -> PrinterMonad ()
 aload n | n <= 3    = put "aload_" %% show n >> endl
         | otherwise = put "aload " %% show n >> endl
         
-astore :: Int -> PrinterMonad ()
+astore :: Integer -> PrinterMonad ()
 astore n | n <= 3    = put "astore_" %% show n >> endl
          | otherwise = put "astore " %% show n >> endl
          
@@ -70,14 +70,14 @@ fconst 1.0 = put "fconst_1" >> endl
 fconst 2.0 = put "fconst_2" >> endl
 fconst x   = put "ldc " %% show x >> endl
 
-fload :: Int -> PrinterMonad ()
+fload :: Integer -> PrinterMonad ()
 fload n | n <= 3    = put "fload_" %% show n >> endl
         | otherwise = put "fload " %% show n >> endl
         
-fstore :: Int -> PrinterMonad ()
+fstore :: Integer -> PrinterMonad ()
 fstore n | n <= 3    = put "fstore_" %% show n >> endl
          | otherwise = put "fstore " %% show n >> endl
-         
+
 goto :: String -> PrinterMonad ()
 goto s = put "goto " %% s >> endl 
 
@@ -97,18 +97,42 @@ imul :: PrinterMonad ()
 imul = put "imul" >> endl
 
 ineg :: PrinterMonad ()
-ineg = put "imul" >> endl
+ineg = put "ineg" >> endl
 
-iload :: Int -> PrinterMonad ()
+iastore :: PrinterMonad ()
+iastore = put "iastore" >> endl
+
+iaload :: PrinterMonad ()
+iaload = put "iaload" >> endl
+
+iload :: Integer -> PrinterMonad ()
 iload n | n <= 3    = put "iload_" %% show n >> endl
         | otherwise = put "iload " %% show n >> endl
         
-istore :: Int -> PrinterMonad ()
+istore :: Integer -> PrinterMonad ()
 istore n | n <= 3    = put "istore_" %% show n >> endl
          | otherwise = put "istore " %% show n >> endl
+        
+ifeq :: String -> PrinterMonad ()
+ifeq dest = put "ifeq " %% dest >> endl
+
+if_icmpeq :: String -> PrinterMonad ()
+if_icmpeq dest = put "if_icmpeq " %% dest >> endl
+
+ifne :: String -> PrinterMonad ()
+ifne dest = put "ifne " %% dest >> endl 
+
+if_icmpne :: String -> PrinterMonad ()
+if_icmpne dest = put "if_icmpne " %% dest >> endl
+
+if_icmplt :: String -> PrinterMonad ()
+if_icmplt dest = put "if_icmplt " %% dest >> endl
          
 iflt :: String -> PrinterMonad ()
 iflt dest = put "iflt " %% dest >> endl
+
+if_icmpge :: String -> PrinterMonad ()
+if_icmpge dest = put "if_icmpge " %% dest >> endl
 
 ifge :: String -> PrinterMonad ()
 ifge dest = put "ifge " %% dest >> endl
@@ -125,8 +149,8 @@ new s = put "new " %% s >> endl
 newarray :: String -> PrinterMonad ()
 newarray s = put "newarray " %% s >> endl
 
-multinewarray :: String -> Int -> PrinterMonad ()
-multinewarray s n = put "multinewarray " %% s %% show n >> endl
+multianewarray :: String -> Int -> PrinterMonad ()
+multianewarray s n = put "multianewarray " %% s %% " " %% show n >> endl
 
 getstatic :: String -> String -> PrinterMonad ()
 getstatic f t = put "getstatic " %% f %% " " %% t >> endl
@@ -137,6 +161,9 @@ invokevirtual m = put "invokevirtual " %% m >> endl
 invokespecial :: String -> PrinterMonad () 
 invokespecial m = put "invokespecial " %% m >> endl
 
+invokestatic :: String -> PrinterMonad ()
+invokestatic m = put "invokestatic " %% m >> endl
+
 returnJ :: PrinterMonad ()
 returnJ = put "return" >> endl
 
@@ -145,6 +172,9 @@ dup = put "dup" >> endl
 
 swap :: PrinterMonad ()
 swap = put "swap" >> endl
+
+nop :: PrinterMonad ()
+nop = put "nop" >> endl
 
 -- | Special header
 fileHeader :: PrinterMonad ()
@@ -170,7 +200,7 @@ defaultConstructor =
         invokespecial "java/lang/Object/<init>()V"
         put "return" >> endl
     
--- | Prints a method of given signature and bodyprzy
+-- | Prints a method of given signature and body
 method :: String -> PrinterMonad a -> PrinterMonad ()
 method sig body = do
     put ".method public " %% sig >> endl
@@ -183,10 +213,10 @@ javaMain :: PrinterMonad a -> PrinterMonad ()
 javaMain = method "static main([Ljava/lang/String;)V"
     
     
-limitStack :: Int -> PrinterMonad ()
+limitStack :: Integer -> PrinterMonad ()
 limitStack n = put ".limit stack " %% show n >> endl
 
-limitLocals :: Int -> PrinterMonad ()
+limitLocals :: Integer -> PrinterMonad ()
 limitLocals n = put ".limit locals " %% show n >> endl
 
 
@@ -220,6 +250,12 @@ printFloat = do
     pushSysOut
     swap
     invokevirtual "java/io/PrintStream/println(F)V"
+    
+printBool :: PrinterMonad ()
+printBool = do
+    pushSysOut
+    swap
+    invokevirtual "java/io/PrintStream/println(Z)V"
     
 -- | Simple "Hello World" program
 example :: PrinterMonad ()

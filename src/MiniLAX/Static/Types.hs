@@ -6,6 +6,9 @@ module MiniLAX.Static.Types (
     Coercion (..),
     MayHaveType (..),
     isArray,
+    arrayBaseType,
+    arrayDim,
+    arrayBounds,
     arit,
     cmp,
     coercion
@@ -24,8 +27,8 @@ data Type = IntegerT
           | RealT 
           | BooleanT 
           | ArrayT { arrayElemType :: Type 
-                   , arrayLower    :: Int
-                   , arrayUpper    :: Int 
+                   , arrayLower    :: Integer
+                   , arrayUpper    :: Integer
                    }
           | TypeError
           deriving (Eq, Show, Typeable)
@@ -33,6 +36,19 @@ data Type = IntegerT
 -- | Represents var/val nature of procedure parameters    
 data ParamKind = ByVar | ByVal  deriving (Eq, Show)
 
+
+arrayBaseType :: Type -> Type
+arrayBaseType (ArrayT t _ _) = arrayBaseType t
+arrayBaseType t = t
+
+
+arrayDim :: Type -> Integer
+arrayDim (ArrayT t _ _) = arrayDim t + 1
+arrayDim _ = 0
+
+arrayBounds :: Type -> [(Integer, Integer)]
+arrayBounds (ArrayT t low high) = (low, high) : arrayBounds t
+arrayBounds _ = []
 
 class MayHaveType a where
     getType :: a -> Maybe Type

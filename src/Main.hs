@@ -13,21 +13,17 @@ import System.Exit
 
 import Data.Map (Map)
 import Data.Traversable as Trav (forM)
-
 import Control.Applicative
-
 import Control.Exception
 import Control.Monad
 import Control.Monad.Trans
 
 import MiniLAX.Compiler
 import MiniLAX.Options
-
 import MiniLAX.Parsing.Lexer
 import MiniLAX.Parsing.LexerCore ()
 import MiniLAX.Printer
 import MiniLAX.AST.Annotated
---import MiniLAX.AST.PrettyPrint
 import MiniLAX.IR.Generate
 
 import MiniLAX.Parsing.Parser2
@@ -36,6 +32,7 @@ import MiniLAX.Static.Symbols
 import MiniLAX.Static
 
 import MiniLAX.Backend.JVM.Skeleton (example)
+import MiniLAX.Backend.JVM.CodeGen (genJVM)
 
 
 main :: IO ()
@@ -46,7 +43,7 @@ type Compiler = CompilerT IO
 run :: IO ()
 run = do
     (opts, args) <- parseOptions =<< getArgs
-    (res, diag) <- runC opts args $ do
+    (res, diag)  <- runC opts args $ do
         greeting
         input  <- liftIO $ optInput opts
         tokens <- tokenize input
@@ -55,9 +52,10 @@ run = do
         maybeDumpAST ast
         sym <- collectSymbols ast
         maybeDumpSymbols sym
-        res @ (procs, _) <- analyze sym
-        maybeDumpIR procs
-        maybeDumpASM res
+        (procs, entry) <- analyze sym
+        let code = (\p -> (p, generateIR procs p)) <$> procs 
+        maybeDumpIR code
+        maybeDumpASM code entry
     void $ Trav.forM diag print
     case res of 
         Right _ -> return ()
@@ -106,15 +104,15 @@ maybeDumpSymbols syms =
         let s = printProc "" syms
         liftIO $ putStrLn $ getString s
         
-maybeDumpIR :: Map String Procedure -> Compiler ()
+maybeDumpIR :: Map String (Procedure, Code) -> Compiler ()
 maybeDumpIR procs = 
     ifEnabled optDumpIR $ do
         let s = printProceduresIR procs
         liftIO $ putStrLn $ getString s
     
-maybeDumpASM :: (Map String Procedure, String) -> Compiler ()
-maybeDumpASM (procs, entry) = 
-    ifEnabled optDumpASM $ do
-        liftIO $ putStrLn $ getString example
-
+maybeDumpASM :: SMap (Procedure, Code) -> String -> Compiler ()
+maybeDumpASM code entry = 
+    ifEnabled optDumpASM $
+        liftIO $ putStrLn $ getString asm
+    where asm = genJVM code entry
 

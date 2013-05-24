@@ -411,7 +411,7 @@ deriving instance (Show l) => Show (Type l)
 
 -- |  
 data Literal l =
-    LitInt l Int
+    LitInt l Integer
   | LitReal l Float
   | LitMichal l
   | LitTrue l

@@ -20,6 +20,9 @@ data JVMType = JVMInt
              
 data Method = Method String [JVMType] JVMType
 
+mkJVMArray :: JVMType -> Integer -> JVMType
+mkJVMArray t n = iterate JVMArray t !! fromInteger n
+
 printPackage :: Package -> String
 printPackage = intercalate "/"
 
@@ -39,6 +42,6 @@ instance Show JVMType where
     
 instance Show Method where
     show (Method n args t) = 
-        show n ++ "(" ++ argTypes ++ ")" ++ show t
+        n ++ "(" ++ argTypes ++ ")" ++ show t
         where argTypes = concatMap show args  
     
